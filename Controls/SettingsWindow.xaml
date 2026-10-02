@@ -1,0 +1,365 @@
+<Window x:Class="MidiPlayer.Controls.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="设置"
+        Width="660" Height="640"
+        MinWidth="660" MinHeight="520"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BgBrush}">
+    <Border BorderBrush="{StaticResource BorderLineBrush}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="52"/>
+            </Grid.RowDefinitions>
+
+            <!-- 标题栏 -->
+            <Border x:Name="TitleBar"
+                    Grid.Row="0"
+                    Background="{StaticResource PanelBrush}"
+                    BorderBrush="{StaticResource BorderLineBrush}"
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <TextBlock Text="ALambda Midi" Foreground="{StaticResource TextPrimaryBrush}"
+                               FontFamily="{StaticResource UiFont}" FontSize="12"
+                               VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <Button x:Name="BtnClose" Content="✕"
+                            Foreground="{StaticResource TextSecondaryBrush}"
+                            Background="Transparent" BorderThickness="0"
+                            FontSize="12" Width="32" Height="32"
+                            HorizontalAlignment="Right" Cursor="Hand"/>
+                </Grid>
+            </Border>
+
+            <!-- 标签页 -->
+            <TabControl x:Name="Tabs" Grid.Row="1"
+                        Style="{StaticResource FlatTabControl}">
+
+                <!-- ============ 设置 ============ -->
+                <TabItem Header="设置" Style="{StaticResource FlatTabItem}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,16,24,16">
+                        <StackPanel>
+
+                            <TextBlock Text="音乐库" Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontFamily="{StaticResource UiFont}" FontSize="11"
+                                       Margin="0,0,0,6"/>
+                            <Grid Margin="0,3,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="TxtLibraryFolder" Grid.Column="0"
+                                         Background="{StaticResource PanelBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderLineBrush}"
+                                         BorderThickness="1"
+                                         FontFamily="{StaticResource UiFont}" FontSize="12"
+                                         Padding="6,5" Margin="0,0,8,0"/>
+                                <Button x:Name="BtnBrowseLibrary" Grid.Column="1"
+                                        Style="{StaticResource TextButton}"
+                                        Content="浏览" Width="60"/>
+                            </Grid>
+
+                            <TextBlock Text="界面" Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontFamily="{StaticResource UiFont}" FontSize="11"
+                                       Margin="0,0,0,6"/>
+
+                            <Grid Margin="0,3">
+                                <TextBlock Text="背景色" Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontFamily="{StaticResource UiFont}" FontSize="13"
+                                           VerticalAlignment="Center"/>
+                                <Button x:Name="BtnBg" Style="{StaticResource SettingsSwatch}" HorizontalAlignment="Right">
+                                    <Border x:Name="SwBg" Width="22" Height="22"
+                                            BorderBrush="#5A5A5F" BorderThickness="1" Background="#0A0E14"/>
+                                </Button>
+                            </Grid>
+
+                            <Grid Margin="0,3">
+                                <TextBlock Text="判定线" Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontFamily="{StaticResource UiFont}" FontSize="13"
+                                           VerticalAlignment="Center"/>
+                                <Button x:Name="BtnPlayhead" Style="{StaticResource SettingsSwatch}" HorizontalAlignment="Right">
+                                    <Border x:Name="SwPlayhead" Width="22" Height="22"
+                                            BorderBrush="#5A5A5F" BorderThickness="1" Background="#FFFFFF"/>
+                                </Button>
+                            </Grid>
+
+                            <Grid Margin="0,14,0,6">
+                                <TextBlock Text="网格线" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontFamily="{StaticResource UiFont}" FontSize="11"
+                                           VerticalAlignment="Center"/>
+                                <CheckBox x:Name="ChkShowGrid" Style="{StaticResource FlatCheckBox}"
+                                          Content="显示" HorizontalAlignment="Right"/>
+                            </Grid>
+
+                            <Grid Margin="0,3">
+                                <TextBlock Text="弱拍" Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontFamily="{StaticResource UiFont}" FontSize="13"
+                                           VerticalAlignment="Center"/>
+                                <Button x:Name="BtnGridWeak" Style="{StaticResource SettingsSwatch}" HorizontalAlignment="Right">
+                                    <Border x:Name="SwGridWeak" Width="22" Height="22"
+                                            BorderBrush="#5A5A5F" BorderThickness="1" Background="#14FFFFFF"/>
+                                </Button>
+                            </Grid>
+
+                            <Grid Margin="0,3">
+                                <TextBlock Text="强拍（小节线）" Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontFamily="{StaticResource UiFont}" FontSize="13"
+                                           VerticalAlignment="Center"/>
+                                <Button x:Name="BtnGridStrong" Style="{StaticResource SettingsSwatch}" HorizontalAlignment="Right">
+                                    <Border x:Name="SwGridStrong" Width="22" Height="22"
+                                            BorderBrush="#5A5A5F" BorderThickness="1" Background="#32FFFFFF"/>
+                                </Button>
+                            </Grid>
+
+                            <TextBlock Text="音符" Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontFamily="{StaticResource UiFont}" FontSize="11"
+                                       Margin="0,14,0,6"/>
+
+                            <Grid Margin="0,3">
+                                <TextBlock Text="未激活" Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontFamily="{StaticResource UiFont}" FontSize="13"
+                                           VerticalAlignment="Center"/>
+                                <Button x:Name="BtnNoteInactive" Style="{StaticResource SettingsSwatch}" HorizontalAlignment="Right">
+                                    <Border x:Name="SwNoteInactive" Width="22" Height="22"
+                                            BorderBrush="#5A5A5F" BorderThickness="1" Background="#3CFFFFFF"/>
+                                </Button>
+                            </Grid>
+
+                            <Grid Margin="0,3">
+                                <TextBlock Text="激活" Foreground="{StaticResource TextPrimaryBrush}"
+                                           FontFamily="{StaticResource UiFont}" FontSize="13"
+                                           VerticalAlignment="Center"/>
+                                <Button x:Name="BtnNoteActive" Style="{StaticResource SettingsSwatch}" HorizontalAlignment="Right">
+                                    <Border x:Name="SwNoteActive" Width="22" Height="22"
+                                            BorderBrush="#5A5A5F" BorderThickness="1" Background="#FFFFFF"/>
+                                </Button>
+                            </Grid>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ============ 教程 ============ -->
+                <TabItem Header="教程" Style="{StaticResource FlatTabItem}">
+                    <Border Background="#18181B">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="28,20,28,20">
+                            <StackPanel>
+
+                                <TextBlock Text="基础操作" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,10"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="22"
+                                           Foreground="#C8C8CC"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,22">
+                                    • 点击工具栏的「打开」按钮，选择一个 .mid 文件<LineBreak/>
+                                    • 也可以把 .mid 文件直接拖到窗口里<LineBreak/>
+                                    • 在「设置」里指定一个文件夹作为 MIDI 库，侧边栏会列出所有文件<LineBreak/>
+                                    • 从工具栏下拉框选择 MIDI 输出端口（例如 MIDI-A / Pianoteq）
+                                </TextBlock>
+
+                                <TextBlock Text="快捷键" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,10"/>
+                                <Grid Margin="0,0,0,22">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="空格"
+                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="播放 / 暂停"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Alt + 空格"
+                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="停止"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="← / →"
+                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="上一首 / 下一首"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="↑ / ↓"
+                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="升调 +1 / 降调 -1"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Ctrl（单击）"
+                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="打开文件对话框"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Shift（单击）"
+                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="横版 / 竖版切换"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Esc"
+                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="打开设置"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+                                </Grid>
+
+                                <TextBlock Text="可视化模式" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,10"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="22"
+                                           Foreground="#C8C8CC"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,22">
+                                    • 竖版瀑布：音符从上方落下，底部是钢琴键盘<LineBreak/>
+                                    • 横版卷轴：音符从右向左移动，中间是判定线<LineBreak/>
+                                    • 音符碰到判定线的瞬间就是它开始播放的时刻<LineBreak/>
+                                    • 碰到线时音符会变亮，短暂保持后淡出
+                                </TextBlock>
+
+                                <TextBlock Text="音乐库" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,10"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="22"
+                                           Foreground="#C8C8CC"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,22">
+                                    • 在设置里选择一个文件夹作为 MIDI 库<LineBreak/>
+                                    • 侧边栏会递归列出该文件夹及子文件夹里的所有 .mid / .midi<LineBreak/>
+                                    • 直接打开（拖拽或 Ctrl）的文件不会加入音乐库<LineBreak/>
+                                    • 循环模式：无 / 列表循环 / 随机，点工具栏循环按钮切换
+                                </TextBlock>
+
+                                <TextBlock Text="播放控制" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,10"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="22"
+                                           Foreground="#C8C8CC"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,22">
+                                    • BPM：点击 ± 调整速度（不影响音高）<LineBreak/>
+                                    • 移调：点击 ± 调整音高 ±12 半音（不影响速度）<LineBreak/>
+                                    • 进度条可点击或拖动跳转<LineBreak/>
+                                    • 空格暂停后，再按空格从暂停位置继续
+                                </TextBlock>
+
+                                <TextBlock Text="配置文件" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,10"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="22"
+                                           Foreground="#C8C8CC"
+                                           FontFamily="{StaticResource UiFont}">
+                                    • 所有设置和颜色保存在程序目录下的 config.json<LineBreak/>
+                                    • 可以手工编辑该文件，下次启动生效
+                                </TextBlock>
+
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </TabItem>
+
+                <!-- ============ 关于 ============ -->
+                <TabItem Header="关于" Style="{StaticResource FlatTabItem}">
+                    <Border Background="#18181B">
+                        <StackPanel Margin="40,40,40,40">
+                            <TextBlock Text="ALambda Midi"
+                                       Foreground="#E4E4E7"
+                                       FontFamily="{StaticResource UiFont}"
+                                       FontSize="26" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="LblVersion" Text="v1.0"
+                                       Foreground="#A1A1AA"
+                                       FontFamily="{StaticResource UiFont}"
+                                       FontSize="12" Margin="0,6,0,0"/>
+
+                            <Rectangle Height="1" Fill="#27272A" Margin="0,24,0,20"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="作者"
+                                           Foreground="#A1A1AA"
+                                           FontFamily="{StaticResource UiFont}" FontSize="12" Margin="0,0,0,10"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="Anming_cat"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" FontSize="12" Margin="0,0,0,10"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="主页"
+                                           Foreground="#A1A1AA"
+                                           FontFamily="{StaticResource UiFont}" FontSize="12" Margin="0,0,0,10"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Margin="0,0,0,10">
+                                    <Hyperlink x:Name="LinkAuthor"
+                                               Foreground="#60A5FA"
+                                               TextDecorations="None"
+                                               FontFamily="{StaticResource UiFont}"
+                                               FontSize="12">anmingcat.pages.dev</Hyperlink>
+                                </TextBlock>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="仓库"
+                                           Foreground="#A1A1AA"
+                                           FontFamily="{StaticResource UiFont}" FontSize="12" Margin="0,0,0,10"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="(占位，待发布)"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" FontSize="12" Margin="0,0,0,10"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="协议"
+                                           Foreground="#A1A1AA"
+                                           FontFamily="{StaticResource UiFont}" FontSize="12"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="MIT License"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" FontSize="12"/>
+                            </Grid>
+
+                            <Rectangle Height="1" Fill="#27272A" Margin="0,24,0,16"/>
+
+                            <TextBlock Text="代码由 AI 生成"
+                                       Foreground="#A1A1AA"
+                                       FontFamily="{StaticResource UiFont}" FontSize="11"/>
+                        </StackPanel>
+                    </Border>
+                </TabItem>
+
+            </TabControl>
+
+            <!-- 底部按钮 -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Margin="0,0,16,0">
+                <Button x:Name="BtnCancel" Content="取消"
+                        Style="{StaticResource TextButton}" Width="80" Margin="0,0,8,0"/>
+                <Button x:Name="BtnOk" Content="确定"
+                        Style="{StaticResource TextButton}" Width="80"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
