@@ -5,7 +5,7 @@
 **ALambda Midi v1.0**, 一个 MIDI 播放器 + 实时可视化工具，支持发送 MIDI 信号到外部音源（如 Pianoteq、DAW、Microsoft GS Wavetable Synth）
 
 <p align="center">
-  <img src="Assets/icon.png" width="128" alt="ALambda Midi 图标">
+  <img src="Assets/ALambda Midi.png" width="128" alt="ALambda Midi 图标">
 </p>
 
 ---
