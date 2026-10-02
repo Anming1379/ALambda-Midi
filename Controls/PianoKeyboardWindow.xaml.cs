@@ -46,7 +46,7 @@ public partial class PianoKeyboardWindow : Window
   { Key.D7, 22 }, { Key.U, 23 }, { Key.I, 24 }, { Key.D9, 25 }, { Key.O, 26 },
 { Key.D0, 27 }, { Key.P, 28 },
 { Key.OemOpenBrackets, 29 }, { Key.OemPlus, 30 }, { Key.OemCloseBrackets, 31 },
-{ Key.OemBackslash, 32 },
+{ Key.OemPipe, 33 }, { Key.OemBackslash, 33 },   // 美式键盘是 OemPipe，欧式额外键是 OemBackslash
 };
 
     // 绘制相关
