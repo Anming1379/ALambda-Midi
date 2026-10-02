@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Threading;
+using System.Windows.Media;
 using MidiPlayer.Services;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
@@ -13,30 +14,32 @@ namespace MidiPlayer.Controls;
 public abstract class RollControlBase : ContentControl
 {
     protected readonly SKElement Sk = new() { IgnorePixelScaling = true };
-    private readonly DispatcherTimer _timer;
 
     public IReadOnlyList<NoteInfo> Notes { get; set; } = Array.Empty<NoteInfo>();
     public IReadOnlyList<BeatLine> BeatLines { get; set; } = Array.Empty<BeatLine>();
     public Func<TimeSpan>? CurrentTimeProvider { get; set; }
 
-    // 可配置颜色
     public Color BackgroundColor     { get; set; } = Color.FromRgb(0x0A, 0x0E, 0x14);
     public Color NoteInactiveColor   { get; set; } = Color.FromArgb(60, 0xFF, 0xFF, 0xFF);
     public Color NoteActiveColor     { get; set; } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
     public Color PlayheadColor       { get; set; } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
-public Color GridWeakColor       { get; set; } = Color.FromArgb(40, 0xFF, 0xFF, 0xFF);
-public Color GridStrongColor     { get; set; } = Color.FromArgb(90, 0xFF, 0xFF, 0xFF);
+    public Color GridWeakColor       { get; set; } = Color.FromArgb(40, 0xFF, 0xFF, 0xFF);
+    public Color GridStrongColor     { get; set; } = Color.FromArgb(90, 0xFF, 0xFF, 0xFF);
+    public bool  ShowGrid            { get; set; } = true;
 
-// 是否显示网格线
-public bool ShowGrid { get; set; } = true;
     protected RollControlBase()
     {
         Content = Sk;
         Sk.PaintSurface += (_, e) => OnPaint(e);
 
-        _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-        _timer.Tick += (_, _) => Sk.InvalidateVisual();
-        _timer.Start();
+        // 直接跟屏幕刷新率同步，不做限帧
+        Loaded   += (_, _) => CompositionTarget.Rendering += OnRendering;
+        Unloaded += (_, _) => CompositionTarget.Rendering -= OnRendering;
+    }
+
+    private void OnRendering(object? sender, EventArgs e)
+    {
+        Sk.InvalidateVisual();
     }
 
     protected abstract void OnPaint(SKPaintSurfaceEventArgs e);

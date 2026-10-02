@@ -79,6 +79,9 @@ MinWidth="980" MinHeight="560"
 
                     <Rectangle Width="1" Height="20" Fill="{StaticResource BorderLineBrush}" Margin="0,0,8,0"/>
 
+<Button x:Name="BtnPiano" Style="{StaticResource IconButton}"
+        Content="&#xe521;" ToolTip="钢琴键盘" Margin="0,0,4,0"/>
+
 <Button x:Name="BtnSettings" Style="{StaticResource IconButton}"
         Content="&#xe8b8;" ToolTip="设置 / 教程 / 关于"/>
                 </StackPanel>

@@ -14,6 +14,25 @@ using MessageBox = System.Windows.MessageBox;
 
 namespace MidiPlayer;
 
+internal static class DwmHelper
+{
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+    public static void ApplyDarkTitleBar(IntPtr hwnd, int captionBgr, int textBgr)
+    {
+        if (hwnd == IntPtr.Zero) return;
+        try
+        {
+            int dark = 1;
+            DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int));
+            DwmSetWindowAttribute(hwnd, 35, ref captionBgr, sizeof(int));
+            DwmSetWindowAttribute(hwnd, 36, ref textBgr, sizeof(int));
+        }
+        catch { }
+    }
+}
+
 public partial class MainWindow : Window
 {
     private readonly MidiPlayerService _player = new();
@@ -31,6 +50,13 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        // 深色标题栏
+        SourceInitialized += (_, _) =>
+        {
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            DwmHelper.ApplyDarkTitleBar(hwnd, 0x1B1818, 0xFAFAFA);
+        };
 
         _config = AppConfig.Load();
         _loopMode = _config.LoopMode ?? "None";
@@ -52,6 +78,7 @@ public partial class MainWindow : Window
         BtnNext.Click     += (_, _) => PlayNext();
         BtnMode.Click     += (_, _) => ToggleMode();
         BtnLoop.Click     += (_, _) => ToggleLoopMode();
+        BtnPiano.Click    += (_, _) => OpenPianoKeyboard();
         BtnSettings.Click += (_, _) => OpenSettings();
 
         BtnBpmDown.Click   += (_, _) => ChangeBpm(-5);
@@ -79,12 +106,33 @@ public partial class MainWindow : Window
             _player.Dispose();
         };
 
-        // 扫描库 + 恢复上次文件
+        // 扫描库
         RefreshLibrary();
         UpdateLoopIcon();
 
-        if (!string.IsNullOrWhiteSpace(_config.LastFile) && File.Exists(_config.LastFile))
-            TryLoadFile(_config.LastFile, autoPlay: false);
+        // 加载文件的优先级：
+        //   1. 右键"用 ALambda Midi 打开"传来的文件
+        //   2. 上次关闭时的文件
+        string? toLoad = null;
+        if (Application.Current.Properties[App.StartupFileKey] is string cmdFile
+            && File.Exists(cmdFile))
+        {
+            toLoad = cmdFile;
+        }
+        else if (!string.IsNullOrWhiteSpace(_config.LastFile)
+                 && File.Exists(_config.LastFile))
+        {
+            toLoad = _config.LastFile;
+        }
+
+        if (toLoad != null)
+        {
+            // 等窗口加载完成再加载文件，避免 UI 还没准备好
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                TryLoadFile(toLoad, autoPlay: false);
+            }), DispatcherPriority.Loaded);
+        }
     }
 
     // ---------------- 配置 ----------------
@@ -136,22 +184,22 @@ public partial class MainWindow : Window
         _config.Save();
     }
 
-private void LoadPorts()
-{
-    CmbPort.Items.Clear();
-    var names = MidiPlayerService.GetOutputPortNames().ToList();
-    if (names.Count == 0)
+    private void LoadPorts()
     {
-        CmbPort.Items.Add("(未找到 MIDI 端口)");
+        CmbPort.Items.Clear();
+        var names = MidiPlayerService.GetOutputPortNames().ToList();
+        if (names.Count == 0)
+        {
+            CmbPort.Items.Add("(未找到 MIDI 端口)");
+            CmbPort.SelectedIndex = 0;
+            CmbPort.IsEnabled = false;
+            return;
+        }
+        foreach (var name in names)
+            CmbPort.Items.Add(name);
         CmbPort.SelectedIndex = 0;
-        CmbPort.IsEnabled = false;
-        return;
+        CmbPort.IsEnabled = true;
     }
-    foreach (var name in names)
-        CmbPort.Items.Add(name);
-    CmbPort.SelectedIndex = 0;
-    CmbPort.IsEnabled = true;
-}
 
     private void SelectPort(string? portName)
     {
@@ -172,7 +220,6 @@ private void LoadPorts()
     {
         var mods = Keyboard.Modifiers;
 
-        // Alt + Space → 停止
         if (e.Key == Key.System && e.SystemKey == Key.Space && mods == ModifierKeys.Alt)
         {
             StopAndReset();
@@ -180,7 +227,6 @@ private void LoadPorts()
             return;
         }
 
-        // Ctrl（单独按）→ 打开文件
         if ((e.Key == Key.LeftCtrl || e.Key == Key.RightCtrl)
             && mods == ModifierKeys.Control)
         {
@@ -189,7 +235,6 @@ private void LoadPorts()
             return;
         }
 
-        // Shift（单独按）→ 横竖切换
         if ((e.Key == Key.LeftShift || e.Key == Key.RightShift)
             && mods == ModifierKeys.Shift)
         {
@@ -198,40 +243,16 @@ private void LoadPorts()
             return;
         }
 
-        // 有修饰键时，除上述组合外不再处理
         if (mods != ModifierKeys.None) return;
 
         switch (e.Key)
         {
-            case Key.Left:
-                PlayPrev();
-                e.Handled = true;
-                break;
-
-            case Key.Right:
-                PlayNext();
-                e.Handled = true;
-                break;
-
-            case Key.Up:
-                ChangeTranspose(+1);
-                e.Handled = true;
-                break;
-
-            case Key.Down:
-                ChangeTranspose(-1);
-                e.Handled = true;
-                break;
-
-            case Key.Space:
-                TogglePlayPause();
-                e.Handled = true;
-                break;
-
-            case Key.Escape:
-                OpenSettings();
-                e.Handled = true;
-                break;
+            case Key.Left:  PlayPrev();          e.Handled = true; break;
+            case Key.Right: PlayNext();          e.Handled = true; break;
+            case Key.Up:    ChangeTranspose(+1); e.Handled = true; break;
+            case Key.Down:  ChangeTranspose(-1); e.Handled = true; break;
+            case Key.Space: TogglePlayPause();   e.Handled = true; break;
+            case Key.Escape:OpenSettings();      e.Handled = true; break;
         }
     }
 
@@ -432,9 +453,9 @@ private void LoadPorts()
             MessageBox.Show("请先打开一个 MIDI 文件", "提示");
             return;
         }
-        if (CmbPort.SelectedItem is not string portName)
+        if (CmbPort.SelectedItem is not string portName || portName.StartsWith("("))
         {
-            MessageBox.Show("请选择输出端口", "提示");
+            MessageBox.Show("请先选择有效的 MIDI 输出端口。", "提示");
             return;
         }
         try
@@ -527,10 +548,10 @@ private void LoadPorts()
         switch (_player.Status)
         {
             case PlayerStatus.Playing:
-                BtnPlay.Content = "\ue034";   // pause
+                BtnPlay.Content = "\ue034";
                 break;
             default:
-                BtnPlay.Content = "\ue037";   // play_arrow
+                BtnPlay.Content = "\ue037";
                 break;
         }
     }
@@ -595,7 +616,20 @@ private void LoadPorts()
         UpdatePlayButton();
     }
 
-    // ---------------- 设置 ----------------
+    // ---------------- 设置 / 钢琴 ----------------
+
+    private void OpenPianoKeyboard()
+    {
+        var portName = CmbPort.SelectedItem as string;
+        if (string.IsNullOrWhiteSpace(portName) || portName.StartsWith("("))
+        {
+            MessageBox.Show("请先在主窗口选择有效的 MIDI 输出端口。", "提示");
+            return;
+        }
+
+        var win = new PianoKeyboardWindow(portName) { Owner = this };
+        win.Show();
+    }
 
     private void OpenSettings()
     {
