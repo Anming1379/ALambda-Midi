@@ -43,9 +43,11 @@ public partial class PianoKeyboardWindow : Window
         // 高八度（Q 行）
         { Key.Q, 12 }, { Key.D2, 13 }, { Key.W, 14 }, { Key.D3, 15 }, { Key.E, 16 },
         { Key.R, 17 }, { Key.D5, 18 }, { Key.T, 19 }, { Key.D6, 20 }, { Key.Y, 21 },
-        { Key.D7, 22 }, { Key.U, 23 }, { Key.I, 24 }, { Key.D9, 25 }, { Key.O, 26 },
-        { Key.D0, 27 }, { Key.P, 28 },
-    };
+  { Key.D7, 22 }, { Key.U, 23 }, { Key.I, 24 }, { Key.D9, 25 }, { Key.O, 26 },
+{ Key.D0, 27 }, { Key.P, 28 },
+{ Key.OemOpenBrackets, 29 }, { Key.OemPlus, 30 }, { Key.OemCloseBrackets, 31 },
+{ Key.OemBackslash, 32 },
+};
 
     // 绘制相关
     private readonly SKPaint _whitePaint  = new() { Color = new SKColor(0xE4, 0xE4, 0xE7), IsAntialias = false };

@@ -38,8 +38,17 @@ public string  LoopMode      { get; set; } = "None";   // None / List / Shuffle
     /// 配置文件路径：与可执行文件同目录下的 config.json。
     /// 打包后用户可以手工编辑。
     /// </summary>
-    public static string ConfigPath =>
-        Path.Combine(AppContext.BaseDirectory, "config.json");
+public static string ConfigPath
+{
+    get
+    {
+        var dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "ALambda Midi");
+        Directory.CreateDirectory(dir);
+        return Path.Combine(dir, "config.json");
+    }
+}
 
     public static AppConfig Load()
     {

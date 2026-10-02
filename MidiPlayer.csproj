@@ -7,10 +7,27 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <NoWarn>$(NoWarn);NU1701</NoWarn>
+
+    <!-- 生成的文件名 -->
+    <AssemblyName>ALambdaMidi</AssemblyName>
+    <RootNamespace>MidiPlayer</RootNamespace>
+
+    <!-- 图标 -->
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+
+    <!-- 版本信息（在 exe 属性里能看到） -->
+    <Product>ALambda Midi</Product>
+    <AssemblyTitle>ALambda Midi</AssemblyTitle>
+    <Company>Anming_cat</Company>
+    <Description>MIDI 播放器 + 实时可视化</Description>
+    <Copyright>MIT License</Copyright>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="Assets\Fonts\*.ttf" />
+    <Resource Include="Assets\icon.ico" />
     <None Update="Assets\Midi\*.mid" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

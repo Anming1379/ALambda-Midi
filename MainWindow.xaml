@@ -6,7 +6,8 @@ Title="ALambda Midi"
 Width="1240" Height="660"
 MinWidth="980" MinHeight="560"
         Background="{StaticResource BgBrush}"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/icon.ico">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/>
