@@ -186,8 +186,9 @@
                                 <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="22"
                                            Foreground="#C8C8CC"
                                            FontFamily="{StaticResource UiFont}" Margin="0,0,0,22">
-                                    • 点击工具栏的「打开」按钮，选择一个 .mid 文件<LineBreak/>
+                                    • 点击工具栏的「打开」按钮（Ctrl+O），选择一个 .mid 文件<LineBreak/>
                                     • 也可以把 .mid 文件直接拖到窗口里<LineBreak/>
+                                    • 用右键「用 ALambda Midi 打开」时会自动开始播放<LineBreak/>
                                     • 在「设置」里指定一个文件夹作为 MIDI 库，侧边栏会列出所有文件<LineBreak/>
                                     • 从工具栏下拉框选择 MIDI 输出端口（例如 MIDI-A / Pianoteq）
                                 </TextBlock>
@@ -195,7 +196,7 @@
                                 <TextBlock Text="快捷键" FontSize="14" FontWeight="SemiBold"
                                            Foreground="#E4E4E7"
                                            FontFamily="{StaticResource UiFont}" Margin="0,0,0,10"/>
-                                <Grid Margin="0,0,0,22">
+                                <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="*"/>
@@ -208,57 +209,118 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="空格"
-                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
                                                FontSize="12" Margin="0,4"/>
                                     <TextBlock Grid.Row="0" Grid.Column="1" Text="播放 / 暂停"
                                                Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
                                                FontSize="12" Margin="0,4"/>
 
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Alt + 空格"
-                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Esc"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
                                                FontSize="12" Margin="0,4"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="停止"
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="停止并回到开头"
                                                Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
                                                FontSize="12" Margin="0,4"/>
 
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="← / →"
-                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
                                                FontSize="12" Margin="0,4"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="上一首 / 下一首"
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="快退 / 快进 5 秒"
                                                Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
                                                FontSize="12" Margin="0,4"/>
 
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="↑ / ↓"
-                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Home"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
                                                FontSize="12" Margin="0,4"/>
-                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="升调 +1 / 降调 -1"
+                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="回到开头"
                                                Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
                                                FontSize="12" Margin="0,4"/>
 
-                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Ctrl（单击）"
-                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="↑ / ↓"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
                                                FontSize="12" Margin="0,4"/>
-                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="打开文件对话框"
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="升调 / 降调 ±1（可长按）"
                                                Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
                                                FontSize="12" Margin="0,4"/>
 
-                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Shift（单击）"
-                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Ctrl + ← / →"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
                                                FontSize="12" Margin="0,4"/>
-                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="横版 / 竖版切换"
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="上一首 / 下一首（同文件夹）"
                                                Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
                                                FontSize="12" Margin="0,4"/>
 
-                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Esc"
-                                               Foreground="#60A5FA" FontFamily="Consolas"
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Ctrl + O"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
                                                FontSize="12" Margin="0,4"/>
-                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="打开设置"
+                                    <TextBlock Grid.Row="6" Grid.Column="1" Text="打开文件"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Ctrl + H"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="7" Grid.Column="1" Text="横版 / 竖版切换"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Ctrl + L"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="8" Grid.Column="1" Text="循环模式切换"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Ctrl + B"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="9" Grid.Column="1" Text="显示 / 隐藏 MIDI 库"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Ctrl + E"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="10" Grid.Column="1" Text="打开 MIDI 编辑器"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Ctrl + P"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="11" Grid.Column="1" Text="钢琴键盘"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Ctrl + ,"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="12" Grid.Column="1" Text="打开设置"
+                                               Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
+                                               FontSize="12" Margin="0,4"/>
+
+                                    <TextBlock Grid.Row="13" Grid.Column="0" Text="[  /  ]"
+                                               Foreground="#A78BFA" FontFamily="Consolas"
+                                               FontSize="12" Margin="0,4"/>
+                                    <TextBlock Grid.Row="13" Grid.Column="1" Text="BPM -5 / +5"
                                                Foreground="#C8C8CC" FontFamily="{StaticResource UiFont}"
                                                FontSize="12" Margin="0,4"/>
                                 </Grid>
+                                <TextBlock Text="组合键都是为了防误触设计的；长按空格不会连续触发播放 / 暂停。"
+                                           TextWrapping="Wrap"
+                                           Foreground="#A1A1AA"
+                                           FontFamily="{StaticResource UiFont}" FontSize="11"
+                                           Margin="0,0,0,22"/>
 
                                 <TextBlock Text="可视化模式" FontSize="14" FontWeight="SemiBold"
                                            Foreground="#E4E4E7"
@@ -280,8 +342,9 @@
                                            FontFamily="{StaticResource UiFont}" Margin="0,0,0,22">
                                     • 在设置里选择一个文件夹作为 MIDI 库<LineBreak/>
                                     • 侧边栏会递归列出该文件夹及子文件夹里的所有 .mid / .midi<LineBreak/>
-                                    • 直接打开（拖拽或 Ctrl）的文件不会加入音乐库<LineBreak/>
-                                    • 循环模式：无 / 列表循环 / 随机，点工具栏循环按钮切换
+                                    • 直接打开（拖拽或 Ctrl+O）的文件不会加入音乐库<LineBreak/>
+                                    • 循环模式：无 / 列表循环 / 随机，点工具栏循环按钮切换<LineBreak/>
+                                    • 上一首 / 下一首 / 循环 只在「当前文件所在的文件夹」里生效
                                 </TextBlock>
 
                                 <TextBlock Text="播放控制" FontSize="14" FontWeight="SemiBold"
@@ -294,6 +357,23 @@
                                     • 移调：点击 ± 调整音高 ±12 半音（不影响速度）<LineBreak/>
                                     • 进度条可点击或拖动跳转<LineBreak/>
                                     • 空格暂停后，再按空格从暂停位置继续
+                                </TextBlock>
+
+                                <TextBlock Text="MIDI 编辑器" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="#E4E4E7"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,10"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="22"
+                                           Foreground="#C8C8CC"
+                                           FontFamily="{StaticResource UiFont}" Margin="0,0,0,22">
+                                    • 工具栏「编辑器」按钮：打开当前 MIDI（无文件时新建），整页切换<LineBreak/>
+                                    • 左键放音符 / 拖动，拖右边缘改长度，右键（可滑动）删除<LineBreak/>
+                                    • Shift + 拖动框选；↑ / ↓ 移调 ±1，Shift + ↑ / ↓ 移调一个八度<LineBreak/>
+                                    • 点击顶部小节标尺移动播放头；空格播放 / 暂停（从头开始请点停止）<LineBreak/>
+                                    • 滚轮上下滚动，Shift + 滚轮左右滚动<LineBreak/>
+                                    • Ctrl + 滚轮横向缩放，Alt + 滚轮纵向缩放<LineBreak/>
+                                    • Ctrl + Z / Ctrl + Y 撤销 / 重做<LineBreak/>
+                                    • Ctrl + S 快速保存：第一次弹保存窗口，之后直接覆盖<LineBreak/>
+                                    • 工具栏保存按钮始终打开保存窗口，可改名称 / 目录 / BPM / 拍号
                                 </TextBlock>
 
                                 <TextBlock Text="配置文件" FontSize="14" FontWeight="SemiBold"
@@ -350,7 +430,7 @@
                                            FontFamily="{StaticResource UiFont}" FontSize="12" Margin="0,0,0,10"/>
                                 <TextBlock Grid.Row="1" Grid.Column="1" Margin="0,0,0,10">
                                     <Hyperlink x:Name="LinkAuthor"
-                                               Foreground="#60A5FA"
+                                               Foreground="#A78BFA"
                                                TextDecorations="None"
                                                FontFamily="{StaticResource UiFont}"
                                                FontSize="12">anmingcat.pages.dev</Hyperlink>

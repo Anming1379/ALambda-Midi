@@ -15,6 +15,19 @@ public class ColorsConfig
     public string NoteActive     { get; set; } = "#FFFFFFFF";
 }
 
+/// <summary>
+/// MIDI 编辑器里记住的上一次保存信息。
+/// </summary>
+public class EditorSaveInfo
+{
+    public string? MidiName    { get; set; }
+    public string? Folder      { get; set; }
+    public string? Path        { get; set; }
+    public int     Bpm         { get; set; } = 120;
+    public int     Numerator   { get; set; } = 4;
+    public int     Denominator { get; set; } = 4;
+}
+
 public class AppConfig
 {
 
@@ -27,6 +40,17 @@ public string  LoopMode      { get; set; } = "None";   // None / List / Shuffle
     public bool    HorizontalMode    { get; set; } = false;
     public bool    ShowGrid          { get; set; } = true;
     public ColorsConfig Colors       { get; set; } = new();
+
+    /// <summary>
+    /// 编辑器保存记忆：键是源 MIDI 路径（新建 MIDI 用 "@untitled"）。
+    /// </summary>
+    public Dictionary<string, EditorSaveInfo> EditorSaves { get; set; } = new();
+
+    /// <summary>编辑器默认保存目录：音乐\ALambda Midi</summary>
+    public static string DefaultEditorFolder =>
+        System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+            "ALambda Midi");
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {

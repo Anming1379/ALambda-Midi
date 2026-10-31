@@ -14,8 +14,8 @@ public class ProgressBarControl : ContentControl
     private readonly DispatcherTimer _timer;
 
     private static readonly SKColor TrackColor  = new(0x27, 0x27, 0x2A);
-    private static readonly SKColor FillColor   = new(0x3B, 0x82, 0xF6);
-    private static readonly SKColor HoverColor  = new(0x60, 0xA5, 0xFA);
+    private static readonly SKColor FillColor   = new(0x8B, 0x5C, 0xF6);
+    private static readonly SKColor HoverColor  = new(0xA7, 0x8B, 0xFA);
     private static readonly SKColor HandleColor = new(0xFA, 0xFA, 0xFA);
 
     private TimeSpan _total;

@@ -39,6 +39,7 @@ public abstract class RollControlBase : ContentControl
 
     private void OnRendering(object? sender, EventArgs e)
     {
+        if (!IsVisible) return;
         Sk.InvalidateVisual();
     }
 

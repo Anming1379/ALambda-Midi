@@ -1,7 +1,7 @@
 ; ALambda Midi 安装脚本
 
 #define MyAppName "ALambda Midi"
-#define MyAppVersion "1.0"
+#define MyAppVersion "2.0"
 #define MyAppPublisher "Anming_cat"
 #define MyAppURL "https://anmingcat.pages.dev/"
 #define MyAppExeName "ALambdaMidi.exe"

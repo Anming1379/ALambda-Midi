@@ -42,6 +42,49 @@ public class MidiPlayerService : IDisposable
     public static IEnumerable<string> GetOutputPortNames()
         => OutputDevice.GetAll().Select(d => d.Name);
 
+    // ---------------- 控制器复位 ----------------
+
+    private const byte SustainCc    = 64;   // 延音踏板
+    private const byte SostenutoCc  = 66;   // 持音踏板
+    private const byte SoftPedalCc  = 67;   // 弱音踏板
+    private const byte AllSoundOffCc = 120;
+    private const byte AllNotesOffCc = 123;
+
+    /// <summary>
+    /// 向全部 16 个通道发送「松开踏板 + 关闭残留音符」的复位信号。
+    /// 解决上一首结束 / 暂停时踩下的踏板状态残留到下一首开头的问题。
+    /// </summary>
+    public static void ResetControllers(OutputDevice output, bool includeNotes = true)
+    {
+        for (int ch = 0; ch < 16; ch++)
+        {
+            var channel = (FourBitNumber)(byte)ch;
+            try
+            {
+                if (includeNotes)
+                {
+                    output.SendEvent(new ControlChangeEvent(
+                        (SevenBitNumber)AllNotesOffCc, (SevenBitNumber)0) { Channel = channel });
+                }
+
+                // 断开三种踏板
+                output.SendEvent(new ControlChangeEvent(
+                    (SevenBitNumber)SustainCc, (SevenBitNumber)0) { Channel = channel });
+                output.SendEvent(new ControlChangeEvent(
+                    (SevenBitNumber)SostenutoCc, (SevenBitNumber)0) { Channel = channel });
+                output.SendEvent(new ControlChangeEvent(
+                    (SevenBitNumber)SoftPedalCc, (SevenBitNumber)0) { Channel = channel });
+
+                if (includeNotes)
+                {
+                    output.SendEvent(new ControlChangeEvent(
+                        (SevenBitNumber)AllSoundOffCc, (SevenBitNumber)0) { Channel = channel });
+                }
+            }
+            catch { /* 某些虚拟端口不接受全部 CC，忽略即可 */ }
+        }
+    }
+
     // ---------------- 加载 ----------------
 
     public void Load(string path)
@@ -204,6 +247,10 @@ else if (ev is NoteOffEvent off)
 
         _currentPortName = portName;
         _output = OutputDevice.GetByName(portName);
+
+        // 关键：开播前先断开踏板 / 清掉残留音符，避免上一首的 Sustain 粘过来
+        ResetControllers(_output);
+
         _playback = _workingFile.GetPlayback(_output);
         _playback.Speed = (float)CurrentBpm / OriginalBpm;
         _playback.Finished += OnPlaybackFinished;
@@ -257,6 +304,12 @@ else if (ev is NoteOffEvent off)
 
     private void StopInternal()
     {
+        // 停止时也把踏板松开，避免长音一直吊着
+        if (_output != null)
+        {
+            try { ResetControllers(_output); } catch { }
+        }
+
         if (_playback != null)
         {
             _playback.Finished -= OnPlaybackFinished;

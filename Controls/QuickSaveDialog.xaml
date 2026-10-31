@@ -1,0 +1,131 @@
+﻿<Window x:Class="MidiPlayer.Controls.QuickSaveDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="保存 MIDI"
+        Width="540" Height="452"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="{StaticResource BgBrush}">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="0"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Border BorderBrush="{StaticResource BorderLineBrush}" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="56"/>
+            </Grid.RowDefinitions>
+
+            <!-- 标题栏 -->
+            <Border x:Name="TitleBar" Grid.Row="0"
+                    Background="{StaticResource PanelBrush}"
+                    BorderBrush="{StaticResource BorderLineBrush}"
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock Text="&#xe161;"
+                                   FontFamily="{StaticResource IconFont}" FontSize="15"
+                                   Foreground="{StaticResource AccentSoftBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="保存 MIDI 文件"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource UiFont}" FontSize="12"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <Button x:Name="BtnClose" Content="✕"
+                            Foreground="{StaticResource TextSecondaryBrush}"
+                            Background="Transparent" BorderThickness="0"
+                            FontSize="12" Width="32" Height="32"
+                            HorizontalAlignment="Right" Cursor="Hand"/>
+                </Grid>
+            </Border>
+
+            <!-- 表单 -->
+            <StackPanel Grid.Row="1" Margin="24,18,24,12">
+
+                <TextBlock Text="MIDI 名称"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontFamily="{StaticResource UiFont}" FontSize="11"
+                           Margin="0,0,0,6"/>
+                <TextBox x:Name="TxtName" Style="{StaticResource FlatTextBox}"
+                         Height="32" Margin="0,0,0,14"/>
+
+                <TextBlock Text="保存位置"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontFamily="{StaticResource UiFont}" FontSize="11"
+                           Margin="0,0,0,6"/>
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TxtFolder" Grid.Column="0"
+                             Style="{StaticResource FlatTextBox}"
+                             Height="32" Margin="0,0,8,0"/>
+                    <Button x:Name="BtnBrowse" Grid.Column="1"
+                            Style="{StaticResource TextButton}"
+                            Content="浏览" Width="60"/>
+                </Grid>
+
+                <TextBlock x:Name="LblPath"
+                           Foreground="{StaticResource TextDimBrush}"
+                           FontFamily="{StaticResource UiFont}" FontSize="10"
+                           TextTrimming="CharacterEllipsis"
+                           Margin="0,0,0,16"/>
+
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                        <TextBlock Text="BPM"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource UiFont}" FontSize="11"
+                                   Margin="0,0,0,6"/>
+                        <TextBox x:Name="TxtBpm" Style="{StaticResource FlatTextBox}"
+                                 Height="32"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="拍号"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource UiFont}" FontSize="11"
+                                   Margin="0,0,0,6"/>
+                        <ComboBox x:Name="CmbSignature"
+                                  Style="{StaticResource FlatComboBox}"
+                                  Height="32"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="保存后可以直接按 Ctrl+S 覆盖这个文件；工具栏的保存按钮会再次打开这个窗口。"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource TextDimBrush}"
+                           FontFamily="{StaticResource UiFont}" FontSize="11"
+                           Margin="0,18,0,0"/>
+            </StackPanel>
+
+            <!-- 底部按钮 -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Margin="0,0,16,0">
+                <Button x:Name="BtnCancel" Content="取消"
+                        Style="{StaticResource TextButton}" Width="80" Margin="0,0,8,0"/>
+                <Button x:Name="BtnOk" Content="保存"
+                        Style="{StaticResource TextButton}" Width="80"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

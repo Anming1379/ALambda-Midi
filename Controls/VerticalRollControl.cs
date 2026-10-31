@@ -18,7 +18,7 @@ public class VerticalRollControl : RollControlBase
 
     private static readonly SKColor WhiteKeyColor  = new(0xB8, 0xC0, 0xCC);
     private static readonly SKColor BlackKeyColor  = new(0x14, 0x18, 0x1F);
-    private static readonly SKColor ActiveKeyColor = new(0x3B, 0x82, 0xF6);
+    private static readonly SKColor ActiveKeyColor = new(0x8B, 0x5C, 0xF6);   // 主题紫
 
     private readonly SKPaint _playheadPaint  = new();
     private readonly SKPaint _notePaint      = new() { IsAntialias = true };

@@ -7,8 +7,12 @@ Width="1240" Height="660"
 MinWidth="980" MinHeight="560"
         Background="{StaticResource BgBrush}"
         WindowStartupLocation="CenterScreen"
-        Icon="/Assets/icon.ico">
-    <Grid>
+        Icon="/Assets/icon.ico"
+        UseLayoutRounding="True">
+    <Grid x:Name="Shell" RenderTransformOrigin="0.5,0.5">
+        <Grid.RenderTransform>
+            <TranslateTransform x:Name="ShellShift" Y="14"/>
+        </Grid.RenderTransform>
         <Grid.RowDefinitions>
             <RowDefinition Height="48"/>
             <RowDefinition Height="*"/>
@@ -21,14 +25,20 @@ MinWidth="980" MinHeight="560"
                 BorderBrush="{StaticResource BorderLineBrush}"
                 BorderThickness="0,0,0,1">
             <Grid Margin="8,0">
-                <!-- 左侧 -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="1"/>
+                </Grid.RowDefinitions>
 
-<Button x:Name="BtnSidebar" Style="{StaticResource IconButton}"
-        Content="&#xe5d2;" ToolTip="显示/隐藏 MIDI 库" Margin="0,0,8,0"/>
+                <!-- 左侧 -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal"
+                            HorizontalAlignment="Left" VerticalAlignment="Center">
+
+                    <Button x:Name="BtnSidebar" Style="{StaticResource IconButton}"
+                            Content="&#xe5d2;" ToolTip="显示/隐藏 MIDI 库  (Ctrl+B)" Margin="0,0,8,0"/>
 
                     <Button x:Name="BtnOpen" Style="{StaticResource IconButton}"
-                            Content="&#xe2c8;" ToolTip="打开文件" Margin="0,0,8,0"/>
+                            Content="&#xe2c8;" ToolTip="打开文件  (Ctrl+O)" Margin="0,0,8,0"/>
 
                     <ComboBox x:Name="CmbPort" Style="{StaticResource FlatComboBox}"
                               Width="180" Margin="0,0,8,0"/>
@@ -36,118 +46,127 @@ MinWidth="980" MinHeight="560"
                     <Rectangle Width="1" Height="20" Fill="{StaticResource BorderLineBrush}" Margin="0,0,8,0"/>
 
                     <Button x:Name="BtnPrev" Style="{StaticResource IconButton}"
-                            Content="&#xe045;" ToolTip="上一首" Margin="0,0,4,0"/>
+                            Content="&#xe045;" ToolTip="上一首  (Ctrl+←)" Margin="0,0,4,0"/>
                     <Button x:Name="BtnPlay" Style="{StaticResource IconButton}"
-                            Content="&#xe037;" ToolTip="播放/暂停" Margin="0,0,4,0"/>
+                            Content="&#xe037;" ToolTip="播放/暂停  (空格)" Margin="0,0,4,0"/>
                     <Button x:Name="BtnStop" Style="{StaticResource IconButton}"
-                            Content="&#xe047;" ToolTip="停止" Margin="0,0,4,0"/>
+                            Content="&#xe047;" ToolTip="停止  (Esc)" Margin="0,0,4,0"/>
                     <Button x:Name="BtnNext" Style="{StaticResource IconButton}"
-                            Content="&#xe044;" ToolTip="下一首"/>
+                            Content="&#xe044;" ToolTip="下一首  (Ctrl+→)"/>
                 </StackPanel>
 
                 <!-- 右侧 -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <StackPanel Grid.Row="0" Orientation="Horizontal"
+                            HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button x:Name="BtnEditor" Style="{StaticResource IconButton}"
+                            Content="&#xe3c9;" ToolTip="MIDI 编辑器  (Ctrl+E)" Margin="0,0,4,0"/>
                     <Button x:Name="BtnMode" Style="{StaticResource IconButton}"
-                            Content="&#xe8d5;" ToolTip="横竖切换" Margin="0,0,4,0"/>
+                            Content="&#xe8d5;" ToolTip="横竖切换  (Ctrl+H)" Margin="0,0,4,0"/>
                     <Button x:Name="BtnLoop" Style="{StaticResource IconButton}"
-                            Content="&#xe040;" ToolTip="循环模式"/>
+                            Content="&#xe040;" ToolTip="循环模式：文件夹内  (Ctrl+L)"/>
 
                     <Rectangle Width="1" Height="20" Fill="{StaticResource BorderLineBrush}" Margin="8,0"/>
 
                     <Button x:Name="BtnBpmDown" Style="{StaticResource IconButton}"
                             Content="−" FontFamily="{StaticResource UiFont}" FontSize="14"
-                            Width="28" Margin="0,0,4,0"/>
+                            Width="28" Margin="0,0,4,0" ToolTip="BPM -5  ( [ )"/>
                     <TextBlock x:Name="LblBpm" Text="— BPM" Width="72" TextAlignment="Center"
                                Foreground="{StaticResource TextPrimaryBrush}"
                                FontFamily="{StaticResource UiFont}" FontSize="12"
                                VerticalAlignment="Center"/>
                     <Button x:Name="BtnBpmUp" Style="{StaticResource IconButton}"
                             Content="+" FontFamily="{StaticResource UiFont}" FontSize="14"
-                            Width="28" Margin="0,0,8,0"/>
+                            Width="28" Margin="0,0,8,0" ToolTip="BPM +5  ( ] )"/>
 
                     <Rectangle Width="1" Height="20" Fill="{StaticResource BorderLineBrush}" Margin="0,0,8,0"/>
 
                     <Button x:Name="BtnTransDown" Style="{StaticResource IconButton}"
                             Content="−" FontFamily="{StaticResource UiFont}" FontSize="14"
-                            Width="28" Margin="0,0,4,0"/>
+                            Width="28" Margin="0,0,4,0" ToolTip="降调 -1  (↓)"/>
                     <TextBlock x:Name="LblTranspose" Text="0" Width="36" TextAlignment="Center"
                                Foreground="{StaticResource TextPrimaryBrush}"
                                FontFamily="{StaticResource UiFont}" FontSize="12"
                                VerticalAlignment="Center"/>
                     <Button x:Name="BtnTransUp" Style="{StaticResource IconButton}"
                             Content="+" FontFamily="{StaticResource UiFont}" FontSize="14"
-                            Width="28" Margin="0,0,8,0"/>
+                            Width="28" Margin="0,0,8,0" ToolTip="升调 +1  (↑)"/>
 
                     <Rectangle Width="1" Height="20" Fill="{StaticResource BorderLineBrush}" Margin="0,0,8,0"/>
 
-<Button x:Name="BtnPiano" Style="{StaticResource IconButton}"
-        Content="&#xe521;" ToolTip="钢琴键盘" Margin="0,0,4,0"/>
+                    <Button x:Name="BtnPiano" Style="{StaticResource IconButton}"
+                            Content="&#xe521;" ToolTip="钢琴键盘  (Ctrl+P)" Margin="0,0,4,0"/>
 
-<Button x:Name="BtnSettings" Style="{StaticResource IconButton}"
-        Content="&#xe8b8;" ToolTip="设置 / 教程 / 关于"/>
+                    <Button x:Name="BtnSettings" Style="{StaticResource IconButton}"
+                            Content="&#xe8b8;" ToolTip="设置 / 教程 / 关于  (Ctrl+,)"/>
                 </StackPanel>
+
+                <!-- 主题点缀：一条很淡的紫色细线 -->
+                <Rectangle Grid.Row="1" Height="1" Width="180" HorizontalAlignment="Left"
+                           Fill="{StaticResource AccentBrush}" Opacity="0.55"/>
             </Grid>
         </Border>
 
         <!-- 主体：侧边栏 + 可视化 -->
-<Grid Grid.Row="1">
-    <Grid.ColumnDefinitions>
-        <ColumnDefinition x:Name="SidebarColumn" Width="0"/>
-        <ColumnDefinition Width="*"/>
-    </Grid.ColumnDefinitions>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="SidebarColumn" Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-    <!-- 侧边栏 -->
-    <Border x:Name="SidebarPanel" Grid.Column="0"
-            Background="{StaticResource PanelBrush}"
-            BorderBrush="{StaticResource BorderLineBrush}"
-            BorderThickness="0,0,1,0"
-            Visibility="Collapsed">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="32"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <Border Grid.Row="0"
+            <!-- 侧边栏（宽度做动画，ClipToBounds 让内容像拉幕一样滑出） -->
+            <Border x:Name="SidebarPanel" Grid.Column="0"
+                    Width="0"
+                    Background="{StaticResource PanelBrush}"
                     BorderBrush="{StaticResource BorderLineBrush}"
-                    BorderThickness="0,0,0,1">
-                <TextBlock Text="MIDI 库"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           FontFamily="{StaticResource UiFont}" FontSize="11"
-                           VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    BorderThickness="0,0,1,0"
+                    ClipToBounds="True"
+                    Visibility="Collapsed">
+                <Grid x:Name="SidebarContent" Width="220" Opacity="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="32"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0"
+                            BorderBrush="{StaticResource BorderLineBrush}"
+                            BorderThickness="0,0,0,1">
+                        <TextBlock Text="MIDI 库"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="{StaticResource UiFont}" FontSize="11"
+                                   VerticalAlignment="Center" Margin="10,0,0,0"/>
+                    </Border>
+                    <TreeView x:Name="LibraryTree" Grid.Row="1"
+                              Background="Transparent" BorderThickness="0"
+                              Foreground="{StaticResource TextPrimaryBrush}"
+                              FontFamily="{StaticResource UiFont}" FontSize="12"
+                              ItemContainerStyle="{StaticResource LibraryTreeItem}"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <TreeView.ItemTemplate>
+                            <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="icon"
+                                               FontFamily="{StaticResource IconFont}"
+                                               FontSize="16" Text="&#xe24d;"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <HierarchicalDataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                        <Setter TargetName="icon" Property="Text" Value="&#xe2c7;"/>
+                                    </DataTrigger>
+                                </HierarchicalDataTemplate.Triggers>
+                            </HierarchicalDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </Grid>
             </Border>
-<TreeView x:Name="LibraryTree" Grid.Row="1"
-          Background="Transparent" BorderThickness="0"
-          Foreground="{StaticResource TextPrimaryBrush}"
-          FontFamily="{StaticResource UiFont}" FontSize="12"
-          ItemContainerStyle="{StaticResource LibraryTreeItem}"
-          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-    <TreeView.ItemTemplate>
-        <HierarchicalDataTemplate ItemsSource="{Binding Children}">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock x:Name="icon"
-                           FontFamily="{StaticResource IconFont}"
-                           FontSize="16" Text="&#xe24d;"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           Margin="0,0,6,0" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
-            </StackPanel>
-            <HierarchicalDataTemplate.Triggers>
-                <DataTrigger Binding="{Binding IsFolder}" Value="True">
-                    <Setter TargetName="icon" Property="Text" Value="&#xe2c7;"/>
-                </DataTrigger>
-            </HierarchicalDataTemplate.Triggers>
-        </HierarchicalDataTemplate>
-    </TreeView.ItemTemplate>
-</TreeView>
-        </Grid>
-    </Border>
 
-    <!-- 可视化 -->
-    <Grid Grid.Column="1">
-        <controls:VerticalRollControl x:Name="VerticalRoll"/>
-        <controls:HorizontalRollControl x:Name="HorizontalRoll" Visibility="Collapsed"/>
-    </Grid>
-</Grid>
+            <!-- 可视化 -->
+            <Grid Grid.Column="1">
+                <controls:VerticalRollControl x:Name="VerticalRoll"/>
+                <controls:HorizontalRollControl x:Name="HorizontalRoll" Visibility="Collapsed"/>
+            </Grid>
+        </Grid>
 
         <!-- 状态栏 -->
         <Border Grid.Row="2"
@@ -156,16 +175,27 @@ MinWidth="980" MinHeight="560"
                 BorderThickness="0,1,0,0">
             <Grid Margin="10,0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="240"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="110"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock x:Name="LblFile" Grid.Column="0" Text="(未打开文件)"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           FontFamily="{StaticResource UiFont}" FontSize="12"
-                           VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"/>
+                <StackPanel Grid.Column="0" Orientation="Horizontal"
+                            VerticalAlignment="Center" MaxWidth="300">
+                    <TextBlock x:Name="LblFile" Text="(未打开文件)"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontFamily="{StaticResource UiFont}" FontSize="12"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+                    <Border x:Name="PlaylistBadge" Margin="8,0,0,0" Padding="6,1"
+                            Background="{StaticResource AccentTintBrush}"
+                            Visibility="Collapsed"
+                            VerticalAlignment="Center">
+                        <TextBlock x:Name="LblPlaylist" Text=""
+                                   Foreground="{StaticResource AccentSoftBrush}"
+                                   FontFamily="{StaticResource UiFont}" FontSize="10"/>
+                    </Border>
+                </StackPanel>
 
                 <controls:ProgressBarControl x:Name="ProgressBar" Grid.Column="1"
                                              Height="12" Margin="12,0" VerticalAlignment="Center"/>
@@ -176,5 +206,30 @@ MinWidth="980" MinHeight="560"
                            HorizontalAlignment="Right" VerticalAlignment="Center"/>
             </Grid>
         </Border>
+
+        <!-- 顶部飘出的提示条 -->
+        <Border x:Name="Toast" Grid.RowSpan="3"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Margin="0,0,0,52"
+                Padding="18,9"
+                Background="#F218181B"
+                BorderBrush="{StaticResource BorderLineBrush}"
+                BorderThickness="1"
+                Opacity="0" IsHitTestVisible="False"
+                Panel.ZIndex="99"
+                RenderTransformOrigin="0.5,0.5">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="ToastShift" Y="14"/>
+            </Border.RenderTransform>
+            <TextBlock x:Name="ToastText" Text=""
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       FontFamily="{StaticResource UiFont}" FontSize="12"/>
+        </Border>
+
+        <!-- MIDI 编辑器（整页覆盖主界面） -->
+        <controls:MidiEditorView x:Name="EditorView"
+                                 Grid.RowSpan="3"
+                                 Visibility="Collapsed"
+                                 Panel.ZIndex="80"/>
     </Grid>
 </Window>

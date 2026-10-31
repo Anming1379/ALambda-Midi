@@ -1,0 +1,178 @@
+﻿<UserControl x:Class="MidiPlayer.Controls.MidiEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:MidiPlayer.Controls"
+             Background="{StaticResource BgBrush}"
+             Focusable="False">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="46"/>
+            <RowDefinition Height="*" MinHeight="80"/>
+            <RowDefinition Height="4"/>
+            <RowDefinition x:Name="LaneRow" Height="112" MinHeight="30"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <!-- ==================== 工具栏 ==================== -->
+        <Border Grid.Row="0"
+                Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource BorderLineBrush}"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="8,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="BtnBack" Style="{StaticResource IconButton}"
+                            Content="&#xe5c4;" ToolTip="返回可视化界面  (Esc)" Margin="0,0,4,0"/>
+                    <Button x:Name="BtnNew" Style="{StaticResource IconButton}"
+                            Content="&#xe89c;" ToolTip="新建空 MIDI  (Ctrl+N)" Margin="0,0,4,0"/>
+
+                    <Rectangle Width="1" Height="20" Fill="{StaticResource BorderLineBrush}" Margin="4,0,8,0"/>
+
+                    <Button x:Name="BtnPlay" Style="{StaticResource IconButton}"
+                            Content="&#xe037;" ToolTip="播放 / 暂停  (空格)" Margin="0,0,4,0"/>
+                    <Button x:Name="BtnStop" Style="{StaticResource IconButton}"
+                            Content="&#xe047;" ToolTip="停止并回到开头" Margin="0,0,4,0"/>
+
+                    <Rectangle Width="1" Height="20" Fill="{StaticResource BorderLineBrush}" Margin="4,0,8,0"/>
+
+                    <Button x:Name="BtnUndo" Style="{StaticResource IconButton}"
+                            Content="&#xe166;" ToolTip="撤销  (Ctrl+Z)" Margin="0,0,4,0"/>
+                    <Button x:Name="BtnRedo" Style="{StaticResource IconButton}"
+                            Content="&#xe15a;" ToolTip="重做  (Ctrl+Y)" Margin="0,0,4,0"/>
+                    <Button x:Name="BtnSave" Style="{StaticResource IconButton}"
+                            Content="&#xe161;" ToolTip="保存 MIDI（打开保存窗口）  (Ctrl+S 快速覆盖)"/>
+
+                    <Rectangle Width="1" Height="20" Fill="{StaticResource BorderLineBrush}" Margin="8,0"/>
+
+                    <ToggleButton x:Name="ChkSnap" Style="{StaticResource IconToggle}"
+                                  Content="&#xe3ec;" ToolTip="磁铁吸附：吸附到网格"
+                                  IsChecked="True" Margin="0,0,4,0"/>
+
+                    <ToggleButton x:Name="ChkScale" Style="{StaticResource IconToggle}"
+                                  Content="&#xe405;" ToolTip="调式辅助：高亮当前调式内的音"
+                                  Margin="0,0,4,0"/>
+                    <ComboBox x:Name="CmbScaleRoot" Style="{StaticResource FlatComboBox}"
+                              Width="60" Height="26" ToolTip="调式主音" Margin="0,0,4,0"/>
+                    <ComboBox x:Name="CmbScaleKind" Style="{StaticResource FlatComboBox}"
+                              Width="100" Height="26" ToolTip="调式" Margin="0,0,4,0"/>
+
+                    <Button x:Name="BtnDrum" Style="{StaticResource TextButton}"
+                            Content="鼓编辑器" Width="88" Height="26"
+                            ToolTip="在钢琴窗和鼓编辑器之间切换"/>
+                </StackPanel>
+
+                <TextBlock x:Name="LblSourceInfo" Grid.Column="1"
+                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                           Margin="12,0,0,0"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontFamily="{StaticResource UiFont}" FontSize="11"
+                           TextTrimming="CharacterEllipsis"/>
+            </Grid>
+        </Border>
+
+        <!-- ==================== 钢琴窗 / 鼓编辑器 ==================== -->
+        <local:PianoRollControl x:Name="Roll" Grid.Row="1"/>
+
+        <!-- ==================== 拖动分隔条 ==================== -->
+        <Grid Grid.Row="2">
+            <Border Height="1" VerticalAlignment="Center"
+                    Background="{StaticResource BorderLineBrush}"/>
+            <GridSplitter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Background="Transparent"
+                          ResizeDirection="Rows" ResizeBehavior="PreviousAndNext"
+                          ShowsPreview="False" Cursor="SizeNS"
+                          ToolTip="上下拖动调整力度 / 踏板编辑区高度"/>
+        </Grid>
+
+        <!-- ==================== 力度 / 踏板编辑区 ==================== -->
+        <Border Grid.Row="3"
+                Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource BorderLineBrush}"
+                BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="26"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid x:Name="LaneHeader" Background="Transparent">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal"
+                                VerticalAlignment="Center" Margin="8,0,0,0">
+                        <ToggleButton x:Name="TabVelocity" Style="{StaticResource LaneTab}"
+                                      Content="力度" IsChecked="True" ToolTip="力度编辑（Tab 切换）"/>
+                        <ToggleButton x:Name="TabPedal" Style="{StaticResource LaneTab}"
+                                      Content="踏板" Margin="2,0,0,0" ToolTip="踏板编辑：左键拖动添加，右键拖动删除（Tab 切换）"/>
+                    </StackPanel>
+
+                    <TextBlock x:Name="LblLaneHint" Grid.Column="1"
+                               Text="拖动竖条修改力度"
+                               Foreground="{StaticResource TextDimBrush}"
+                               FontFamily="{StaticResource UiFont}" FontSize="10"
+                               VerticalAlignment="Center" Margin="12,0,8,0"
+                               TextTrimming="CharacterEllipsis"/>
+
+                    <Button x:Name="BtnLaneCollapse" Grid.Column="2"
+                            Style="{StaticResource IconButton}"
+                            Content="&#xe316;" FontSize="14"
+                            Width="24" Height="22" Margin="0,0,6,0"
+                            BorderThickness="0"
+                            ToolTip="收起 / 展开（也可以拖动上方分隔条）"/>
+                </Grid>
+
+                <local:MidiLaneControl x:Name="Lane" Grid.Row="1"/>
+            </Grid>
+        </Border>
+
+        <!-- ==================== 状态栏 ==================== -->
+        <Border Grid.Row="4"
+                Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource BorderLineBrush}"
+                BorderThickness="0,1,0,0">
+            <Grid Margin="10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="LblTitle"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontFamily="{StaticResource UiFont}" FontSize="11"/>
+                    <TextBlock x:Name="LblDirty" Text=""
+                               Foreground="{StaticResource AccentSoftBrush}"
+                               FontFamily="{StaticResource UiFont}" FontSize="11"
+                               Margin="4,0,0,0"/>
+                </StackPanel>
+
+                <TextBlock x:Name="LblSaveState" Grid.Column="1"
+                           Margin="16,0"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontFamily="{StaticResource UiFont}" FontSize="11"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="LblSelection"
+                               Foreground="{StaticResource TextDimBrush}"
+                               FontFamily="{StaticResource UiFont}" FontSize="11"
+                               Margin="0,0,12,0"/>
+                    <TextBlock x:Name="LblTime" Text="00:00.0 / 00:00.0"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontFamily="{StaticResource UiFont}" FontSize="11"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
