@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -166,6 +166,21 @@ public class PianoRollControl : ContentControl
     private bool _dragMoved;
     private bool _undoPushed;
 
+    // ---------------- 音符增删动画 ----------------
+    private const int NoteAnimMs = 180;
+    private readonly Dictionary<EditorNote, long> _noteBirth = new();
+    private readonly List<GhostNote> _noteGhosts = new();
+
+    private sealed class GhostNote
+    {
+        public long StartTicks;
+        public long LengthTicks;
+        public int NoteNumber;
+        public int Channel;
+        public bool WasSelected;
+        public long StartMs;
+    }
+
     private long _templateLength;
     private int  _templateVelocity = 100;
     private int  _lastPreviewPitch = -1;
@@ -232,6 +247,8 @@ public class PianoRollControl : ContentControl
         _scrollRows = DrumMode ? Math.Max(0, 127 - 84) : Math.Max(0, 127 - 100);
         _displayReady = false;
         _lastRawPosition = -1;
+        _noteBirth.Clear();
+        _noteGhosts.Clear();
         ClearSelection();
         ViewChanged?.Invoke();
         Refresh();
@@ -302,6 +319,9 @@ public class PianoRollControl : ContentControl
 
         float gridW = w - KeyWidth;
         if (gridW <= 0) return;
+
+        long animNow = Environment.TickCount64;
+        PruneNoteAnimations(animNow);
 
         int firstRow = (int)Math.Floor(_scrollRows);
         int visibleRows = (int)Math.Ceiling((h - RulerHeight) / RowHeight) + 1;
@@ -408,29 +428,36 @@ public class PianoRollControl : ContentControl
             if (r.Right < KeyWidth || r.Left > w) continue;
             if (r.Bottom < RulerHeight || r.Top > h) continue;
 
-            float top = r.Top + 1;
-            float bottom = Math.Max(top + 2, r.Bottom - 1);
-            float width = Math.Max(2, r.Width);
+            // 新音符：上下收缩、左右轻微展开、透明度淡入，180ms 后恢复普通绘制
+            float ease = BirthEase(note, animNow);
+            float inset = (1f - ease) * (float)RowHeight * 0.32f;
+            float widthScale = 0.58f + 0.42f * ease;
+            float width = Math.Max(2f, r.Width * widthScale);
+            float left = r.Left + (r.Width - width) * 0.5f;
+            float top = r.Top + 1 + inset;
+            float bottom = Math.Max(top + 2, r.Bottom - 1 - inset);
+            byte alpha = (byte)Math.Clamp(255f * (0.35f + 0.65f * ease), 0f, 255f);
 
             if (note.IsSelected)
             {
-                _notePaint.Color = Accent;
-                canvas.DrawRect(r.Left, top, width, bottom - top, _notePaint);
+                _notePaint.Color = Accent.WithAlpha(alpha);
+                canvas.DrawRect(left, top, width, bottom - top, _notePaint);
 
-                _notePaint.Color = AccentSoft;
-                canvas.DrawRect(r.Left, top, width, 1, _notePaint);
-                canvas.DrawRect(r.Left, bottom - 1, width, 1, _notePaint);
+                _notePaint.Color = AccentSoft.WithAlpha(alpha);
+                canvas.DrawRect(left, top, width, 1, _notePaint);
+                canvas.DrawRect(left, bottom - 1, width, 1, _notePaint);
             }
             else
             {
                 float v = 0.62f + 0.38f * Math.Clamp(note.Velocity / 127f, 0f, 1f);
-                _notePaint.Color = ReferenceEquals(note, _hoverNote)
+                var color = ReferenceEquals(note, _hoverNote)
                     ? NoteHoverColor
                     : new SKColor(
                         (byte)(NoteColor.Red * v),
                         (byte)(NoteColor.Green * v),
                         (byte)(NoteColor.Blue * v));
-                canvas.DrawRect(r.Left, top, width, bottom - top, _notePaint);
+                _notePaint.Color = color.WithAlpha(alpha);
+                canvas.DrawRect(left, top, width, bottom - top, _notePaint);
             }
 
             // 竖直放大时，在音符内部画一条代表力度的细条
@@ -441,9 +468,12 @@ public class PianoRollControl : ContentControl
                 _fillPaint.Color = note.IsSelected
                     ? new SKColor(0xFF, 0xFF, 0xFF, 0x70)
                     : new SKColor(0x00, 0x00, 0x00, 0x55);
-                canvas.DrawRect(r.Left + 1, bottom - barH - 1, barW, barH, _fillPaint);
+                canvas.DrawRect(left + 1, bottom - barH - 1, barW, barH, _fillPaint);
             }
         }
+
+        // 被删除的音符先留下一个快速缩小、淡出的残影
+        DrawNoteGhosts(canvas, animNow, w, h);
 
         canvas.Restore();
 
@@ -561,6 +591,10 @@ public class PianoRollControl : ContentControl
     {
         if (!IsVisible) return;
 
+        long animNow = Environment.TickCount64;
+        PruneNoteAnimations(animNow);
+        bool noteAnimating = _noteGhosts.Count > 0 || _noteBirth.Count > 0;
+
         var doc = Document;
         var session = Session;
         bool playing = session?.IsPlaying == true;
@@ -587,7 +621,7 @@ public class PianoRollControl : ContentControl
                 _displayTicks += dt * ticksPerSecond;
 
                 double error = raw - _displayTicks;
-                double maxDrift = Math.Max(doc.Ppq * 0.5, ticksPerSecond * 0.03);
+                double maxDrift = Math.Max(doc.Ppq * 0.1, ticksPerSecond * 0.04);
                 if (Math.Abs(error) > maxDrift)
                     _displayTicks = raw;
                 else
@@ -625,7 +659,8 @@ public class PianoRollControl : ContentControl
         _lastRawPosition = raw;
 
         // 空闲时不要每帧重绘整张钢琴窗；播放、试听高亮、拖动时才持续刷新。
-        if (playing || positionChanged || _previewHighlights.Count > 0 || _drag != DragMode.None)
+        if (playing || positionChanged || _previewHighlights.Count > 0
+            || _drag != DragMode.None || noteAnimating)
             _sk.InvalidateVisual();
     }
 
@@ -733,6 +768,7 @@ public class PianoRollControl : ContentControl
             IsSelected = true
         };
         doc.Notes.Add(created);
+        _noteBirth[created] = Environment.TickCount64;
         doc.MarkDirty();
         RememberNoteTemplate(created);
 
@@ -954,6 +990,7 @@ public class PianoRollControl : ContentControl
             _undoPushed = true;
         }
 
+        AddDeleteGhost(hit);
         doc.Notes.Remove(hit);
         doc.MarkDirty();
         if (ReferenceEquals(hit, _hoverNote)) _hoverNote = null;
@@ -1074,17 +1111,151 @@ public class PianoRollControl : ContentControl
         RaiseEdited();
     }
 
-    public void DeleteSelectedNotes()
+    public int DeleteSelectedNotes()
     {
         var doc = Document;
-        if (doc == null) return;
-        if (!doc.Notes.Any(n => n.IsSelected)) return;
+        if (doc == null) return 0;
+
+        var deleting = doc.Notes.Where(n => n.IsSelected).ToList();
+        if (deleting.Count == 0) return 0;
 
         doc.PushUndo();
+        foreach (var note in deleting) AddDeleteGhost(note);
         doc.Notes.RemoveAll(n => n.IsSelected);
         doc.MarkDirty();
         RaiseEdited();
         SelectionChanged?.Invoke();
+        return deleting.Count;
+    }
+
+    // ---------------- 复制 / 剪切 / 粘贴 ----------------
+
+    /// <summary>
+    /// 跨文档剪贴板用“拍”保存：把 tick 按源文档 PPQ 归一化，
+    /// 粘贴到 PPQ 不同的 MIDI 时也能保持正确的音乐时值。
+    /// </summary>
+    private sealed class ClipboardNote
+    {
+        public double StartBeats;
+        public double LengthBeats;
+        public int NoteNumber;
+        public int Velocity;
+        public int Channel;
+    }
+
+    private static readonly List<ClipboardNote> NoteClipboard = new();
+
+    private List<EditorNote> GetSelectedVisibleNotes()
+    {
+        var doc = Document;
+        if (doc == null) return new List<EditorNote>();
+        return doc.Notes.Where(n => n.IsSelected && IsNoteVisibleInMode(n)).ToList();
+    }
+
+    private static void StoreClipboard(MidiDocument doc, IReadOnlyList<EditorNote> notes)
+    {
+        NoteClipboard.Clear();
+        double ppq = Math.Max(1, doc.Ppq);
+        foreach (var note in notes)
+        {
+            NoteClipboard.Add(new ClipboardNote
+            {
+                StartBeats = note.StartTicks / ppq,
+                LengthBeats = note.LengthTicks / ppq,
+                NoteNumber = note.NoteNumber,
+                Velocity = Math.Clamp(note.Velocity, 1, 127),
+                Channel = Math.Clamp(note.Channel, 0, 15)
+            });
+        }
+    }
+
+    /// <summary>复制当前模式里选中的音符，返回复制数量。</summary>
+    public int CopySelectedNotes()
+    {
+        var doc = Document;
+        if (doc == null) return 0;
+
+        var notes = GetSelectedVisibleNotes();
+        if (notes.Count == 0) return 0;
+
+        StoreClipboard(doc, notes);
+        return notes.Count;
+    }
+
+    /// <summary>剪切当前模式里选中的音符，返回剪切数量。</summary>
+    public int CutSelectedNotes()
+    {
+        var doc = Document;
+        if (doc == null) return 0;
+
+        var notes = GetSelectedVisibleNotes();
+        if (notes.Count == 0) return 0;
+
+        StoreClipboard(doc, notes);
+        var set = new HashSet<EditorNote>(notes);
+
+        doc.PushUndo();
+        foreach (var note in notes)
+        {
+            AddDeleteGhost(note);
+            _noteBirth.Remove(note);
+        }
+        doc.Notes.RemoveAll(set.Contains);
+        doc.MarkDirty();
+
+        if (_activeNote != null && set.Contains(_activeNote)) _activeNote = null;
+        if (_hoverNote != null && set.Contains(_hoverNote)) _hoverNote = null;
+
+        RaiseEdited();
+        SelectionChanged?.Invoke();
+        return notes.Count;
+    }
+
+    /// <summary>
+    /// 粘贴到当前播放头位置。保留音符之间的相对时间和音高；
+    /// 鼓编辑器统一贴到通道 10，钢琴窗保留原通道（鼓通道会转成通道 1）。
+    /// </summary>
+    public int PasteNotes()
+    {
+        var doc = Document;
+        if (doc == null || NoteClipboard.Count == 0) return 0;
+
+        long anchor = SnapTick(Session?.PositionTicks ?? 0);
+        double firstStart = NoteClipboard.Min(n => n.StartBeats);
+        long now = Environment.TickCount64;
+        bool animate = NoteClipboard.Count <= 256;
+
+        doc.PushUndo();
+        foreach (var note in doc.Notes) note.IsSelected = false;
+
+        var pasted = new List<EditorNote>(NoteClipboard.Count);
+        foreach (var clip in NoteClipboard)
+        {
+            long start = anchor + (long)Math.Round((clip.StartBeats - firstStart) * doc.Ppq);
+            long length = Math.Max(1, (long)Math.Round(clip.LengthBeats * doc.Ppq));
+            int channel = DrumMode ? 9 : (clip.Channel == 9 ? 0 : clip.Channel);
+
+            var note = new EditorNote
+            {
+                NoteNumber = Math.Clamp(clip.NoteNumber, 0, 127),
+                StartTicks = Math.Max(0, start),
+                LengthTicks = length,
+                Velocity = Math.Clamp(clip.Velocity, 1, 127),
+                Channel = channel,
+                IsSelected = true
+            };
+
+            doc.Notes.Add(note);
+            if (animate) _noteBirth[note] = now;
+            pasted.Add(note);
+        }
+
+        doc.MarkDirty();
+        if (pasted.Count > 0) RememberNoteTemplate(pasted[^1]);
+
+        RaiseEdited();
+        SelectionChanged?.Invoke();
+        return pasted.Count;
     }
 
     public int SelectedCount() => Document?.Notes.Count(n => n.IsSelected) ?? 0;
@@ -1179,6 +1350,94 @@ public class PianoRollControl : ContentControl
         note = Math.Clamp(note, 0, 127);
         _previewHighlights[note] = Environment.TickCount64 + 280;
         PreviewRequested?.Invoke(note, channel);
+    }
+
+    private static float EaseOutCubic(float t)
+    {
+        t = Math.Clamp(t, 0f, 1f);
+        float inv = 1f - t;
+        return 1f - inv * inv * inv;
+    }
+
+    /// <summary>新音符的 0-1 出现进度；到期后自动从动画表里移除。</summary>
+    private float BirthEase(EditorNote note, long nowMs)
+    {
+        if (!_noteBirth.TryGetValue(note, out long start)) return 1f;
+
+        float t = (nowMs - start) / (float)NoteAnimMs;
+        if (t >= 1f)
+        {
+            _noteBirth.Remove(note);
+            return 1f;
+        }
+        return EaseOutCubic(t);
+    }
+
+    /// <summary>删除前记录一个残影，用于淡出动画。</summary>
+    private void AddDeleteGhost(EditorNote note)
+    {
+        _noteBirth.Remove(note);
+        if (!IsNoteVisibleInMode(note)) return;
+        if (_noteGhosts.Count >= 256) return;   // 一次删太多时不再堆残影，避免掉帧
+
+        _noteGhosts.Add(new GhostNote
+        {
+            StartTicks = note.StartTicks,
+            LengthTicks = note.LengthTicks,
+            NoteNumber = note.NoteNumber,
+            Channel = note.Channel,
+            WasSelected = note.IsSelected,
+            StartMs = Environment.TickCount64
+        });
+    }
+
+    private void PruneNoteAnimations(long nowMs)
+    {
+        for (int i = _noteGhosts.Count - 1; i >= 0; i--)
+        {
+            if (nowMs - _noteGhosts[i].StartMs >= NoteAnimMs)
+                _noteGhosts.RemoveAt(i);
+        }
+
+        if (_noteBirth.Count == 0) return;
+
+        List<EditorNote>? expired = null;
+        foreach (var kv in _noteBirth)
+        {
+            if (nowMs - kv.Value >= NoteAnimMs)
+                (expired ??= new List<EditorNote>()).Add(kv.Key);
+        }
+        if (expired != null)
+            foreach (var note in expired) _noteBirth.Remove(note);
+    }
+
+    private void DrawNoteGhosts(SKCanvas canvas, long nowMs, float w, float h)
+    {
+        foreach (var ghost in _noteGhosts)
+        {
+            float t = (nowMs - ghost.StartMs) / (float)NoteAnimMs;
+            if (t >= 1f) continue;
+            if (DrumMode ? ghost.Channel != 9 : ghost.Channel == 9) continue;
+
+            float left = TickToX(ghost.StartTicks);
+            float right = TickToX(ghost.StartTicks + ghost.LengthTicks);
+            float top = NoteTopY(ghost.NoteNumber);
+            float bottom = top + (float)RowHeight;
+            if (right < KeyWidth || left > w || bottom < RulerHeight || top > h) continue;
+
+            float ease = Math.Clamp(t, 0f, 1f);
+            float insetY = ease * ease * (float)RowHeight * 0.28f;
+            float drawTop = top + 1 + insetY;
+            float drawBottom = Math.Max(drawTop + 1, bottom - 1 - insetY);
+            float insetX = ease * Math.Min(Math.Max(0f, right - left) * 0.18f, 5f);
+            float drawLeft = left + insetX;
+            float drawRight = Math.Max(drawLeft + 1, right - insetX);
+            byte alpha = (byte)Math.Clamp(210f * (1f - t), 0f, 210f);
+
+            var color = ghost.WasSelected ? Accent : NoteColor;
+            _notePaint.Color = color.WithAlpha(alpha);
+            canvas.DrawRect(drawLeft, drawTop, drawRight - drawLeft, drawBottom - drawTop, _notePaint);
+        }
     }
 
     private void RaiseEdited()

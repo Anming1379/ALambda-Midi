@@ -7,7 +7,7 @@ Width="1240" Height="660"
 MinWidth="980" MinHeight="560"
         Background="{StaticResource BgBrush}"
         WindowStartupLocation="CenterScreen"
-        Icon="/Assets/icon.ico"
+        Icon="pack://application:,,,/ALambdaMidi;component/Assets/icon.ico"
         UseLayoutRounding="True">
     <Grid x:Name="Shell" RenderTransformOrigin="0.5,0.5">
         <Grid.RenderTransform>
@@ -107,7 +107,7 @@ MinWidth="980" MinHeight="560"
         </Border>
 
         <!-- 主体：侧边栏 + 可视化 -->
-        <Grid Grid.Row="1">
+        <Grid x:Name="MainContent" Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="SidebarColumn" Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -169,7 +169,7 @@ MinWidth="980" MinHeight="560"
         </Grid>
 
         <!-- 状态栏 -->
-        <Border Grid.Row="2"
+        <Border x:Name="MainStatus" Grid.Row="2"
                 Background="{StaticResource PanelBrush}"
                 BorderBrush="{StaticResource BorderLineBrush}"
                 BorderThickness="0,1,0,0">
@@ -223,7 +223,9 @@ MinWidth="980" MinHeight="560"
             </Border.RenderTransform>
             <TextBlock x:Name="ToastText" Text=""
                        Foreground="{StaticResource TextPrimaryBrush}"
-                       FontFamily="{StaticResource UiFont}" FontSize="12"/>
+                       FontFamily="{StaticResource UiFont}" FontSize="12"
+                       MaxWidth="620" TextWrapping="Wrap"
+                       TextTrimming="CharacterEllipsis"/>
         </Border>
 
         <!-- MIDI 编辑器（整页覆盖主界面） -->

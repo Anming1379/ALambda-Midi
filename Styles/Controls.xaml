@@ -549,6 +549,7 @@
         <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -556,9 +557,14 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
+                        <!-- 注意：不要在这里再套一层 Padding 的 Margin。
+                             TextBox 内部的 TextBoxView 已经会应用 Padding，
+                             外面再套一次会把可显示高度压掉一半，导致文字下半截被裁掉。 -->
                         <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="{TemplateBinding Padding}"
-                                      VerticalAlignment="Center"/>
+                                      Focusable="False"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">

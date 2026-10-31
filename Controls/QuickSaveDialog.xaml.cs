@@ -51,6 +51,15 @@ public partial class QuickSaveDialog : Window
 
         TxtName.TextChanged   += (_, _) => UpdatePathPreview();
         TxtFolder.TextChanged += (_, _) => UpdatePathPreview();
+        TxtBpm.PreviewTextInput += (_, e) =>
+        {
+            foreach (char c in e.Text)
+            {
+                if (char.IsDigit(c)) continue;
+                e.Handled = true;
+                return;
+            }
+        };
 
         PreviewKeyDown += (_, e) =>
         {
@@ -84,6 +93,7 @@ public partial class QuickSaveDialog : Window
         LblPath.Text = string.IsNullOrEmpty(folder)
             ? "将保存到默认目录：" + AppConfig.DefaultEditorFolder
             : "将保存为：" + Path.Combine(folder, name + ".mid");
+        LblPath.ToolTip = LblPath.Text;
     }
 
     private void TryAccept()

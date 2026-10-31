@@ -90,6 +90,11 @@ public partial class MainWindow : Window
         BtnLoop.Click     += (_, _) => ToggleLoopMode();
         BtnPiano.Click    += (_, _) => OpenPianoKeyboard();
         BtnEditor.Click   += (_, _) => OpenEditor();
+        EditorView.Deactivated += () =>
+        {
+            MainContent.Visibility = Visibility.Visible;
+            MainStatus.Visibility = Visibility.Visible;
+        };
         BtnSettings.Click += (_, _) => OpenSettings();
 
         BtnBpmDown.Click   += (_, _) => ChangeBpm(-5);
@@ -931,6 +936,9 @@ public partial class MainWindow : Window
             return;
         }
 
+        // 编辑器完全覆盖主界面时，暂停下面的可视化渲染，避免两套画布同时重绘
+        MainContent.Visibility = Visibility.Collapsed;
+        MainStatus.Visibility = Visibility.Collapsed;
         EditorView.Focus();
     }
 

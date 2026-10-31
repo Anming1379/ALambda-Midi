@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,6 +32,9 @@ public partial class MidiEditorView : UserControl
     public bool IsActive { get; private set; }
     public bool HasDocument => _doc != null;
 
+    /// <summary>编辑器收起到后台时触发，主窗口用来恢复可视化区域的渲染。</summary>
+    public event Action? Deactivated;
+
     public MidiEditorView()
     {
         InitializeComponent();
@@ -41,7 +44,7 @@ public partial class MidiEditorView : UserControl
 
         Roll.DocumentEdited  += () => { Lane.Refresh(); UpdateStatus(); };
         Roll.SelectionChanged += () => { Lane.Refresh(); UpdateStatus(); };
-        Roll.ViewChanged += () => Lane.Refresh();
+        Roll.ViewChanged += () => { Lane.Refresh(); UpdateSnapLabel(); };
         Roll.PreviewRequested += OnPreviewRequested;
 
         Lane.Roll = Roll;
@@ -84,7 +87,25 @@ public partial class MidiEditorView : UserControl
         ChkSnap.Click  += (_, _) =>
         {
             Roll.SnapEnabled = ChkSnap.IsChecked == true;
+            UpdateSnapLabel();
             Roll.Refresh();
+        };
+
+        TxtBpmEdit.KeyDown += (_, e) =>
+        {
+            if (e.Key != Key.Enter) return;
+            ApplyBpmFromEditor();
+            e.Handled = true;
+        };
+        TxtBpmEdit.LostFocus += (_, _) => ApplyBpmFromEditor();
+        TxtBpmEdit.PreviewTextInput += (_, e) =>
+        {
+            foreach (char c in e.Text)
+            {
+                if (char.IsDigit(c)) continue;
+                e.Handled = true;
+                return;
+            }
         };
 
         ChkScale.Click += (_, _) =>
@@ -127,6 +148,8 @@ public partial class MidiEditorView : UserControl
         _config = config;
         _portProvider = portProvider;
         _notify = notify;
+
+        if (_doc != null) ApplyBpmFromEditor(restartPlayback: false);
 
         // 同一个文件（或都是新建文档）时保留当前编辑内容
         if (_doc != null &&
@@ -200,6 +223,11 @@ public partial class MidiEditorView : UserControl
             _doc.SavePath = info.Path;
             if (!string.IsNullOrWhiteSpace(info.MidiName)) _doc.SaveName = info.MidiName;
             if (!string.IsNullOrWhiteSpace(info.Folder))   _doc.SaveFolder = info.Folder;
+
+            // 记住上次保存时用的 BPM / 拍号，重新打开源 MIDI 时恢复
+            _doc.Bpm         = Math.Clamp(info.Bpm, 20, 400);
+            _doc.Numerator   = Math.Clamp(info.Numerator, 1, 32);
+            _doc.Denominator = Math.Clamp(info.Denominator, 1, 32);
         }
 
         _session = new MidiEditorSession(_doc);
@@ -223,6 +251,7 @@ public partial class MidiEditorView : UserControl
     /// <summary>新建一个空 MIDI（会先询问是否保存当前修改）。</summary>
     public bool NewDocument()
     {
+        ApplyBpmFromEditor(restartPlayback: false);
         if (!ConfirmSaveIfNeeded()) return false;
         if (!LoadDocument(null)) return false;
 
@@ -241,17 +270,22 @@ public partial class MidiEditorView : UserControl
     public void RequestExit()
     {
         if (!IsActive) return;
+        ApplyBpmFromEditor(restartPlayback: false);
         if (!ConfirmSaveIfNeeded()) return;
 
         _session?.Stop();
         _session?.ReleaseOutput();
         IsActive = false;
         Visibility = Visibility.Collapsed;
+        Deactivated?.Invoke();
     }
 
     /// <summary>关闭窗口时询问是否保存。返回 false 表示取消关闭。</summary>
     public bool ConfirmSaveIfNeeded()
     {
+        // 关闭窗口 / 切换文档前，把 BPM 输入框里还没提交的值也一起提交
+        ApplyBpmFromEditor(restartPlayback: false);
+
         if (_doc == null || !_doc.IsDirty) return true;
 
         var owner = Window.GetWindow(this);
@@ -407,6 +441,7 @@ public partial class MidiEditorView : UserControl
 
     private bool SaveWithDialog()
     {
+        ApplyBpmFromEditor();
         if (_doc == null) return false;
 
         var dlg = new QuickSaveDialog(
@@ -424,6 +459,7 @@ public partial class MidiEditorView : UserControl
 
     private bool SaveToExisting()
     {
+        ApplyBpmFromEditor();
         if (_doc?.SavePath == null) return false;
 
         var name = _doc.SaveName ?? Path.GetFileNameWithoutExtension(_doc.SavePath);
@@ -441,6 +477,7 @@ public partial class MidiEditorView : UserControl
 
         try
         {
+            int oldBpm = _doc.Bpm;
             _doc.Bpm = Math.Clamp(bpm, 20, 400);
             _doc.Numerator = Math.Clamp(numerator, 1, 32);
             _doc.Denominator = Math.Clamp(denominator, 1, 32);
@@ -450,6 +487,19 @@ public partial class MidiEditorView : UserControl
 
             RememberSave();
 
+            // 在保存窗口里改了 BPM 时，正在播放的会话也要立即用新速度重新开始
+            if (oldBpm != _doc.Bpm && _session?.IsPlaying == true)
+            {
+                long position = _session.PositionTicks;
+                _session.Stop();
+                if (_session.Play(_portProvider?.Invoke()))
+                    _session.SeekTicks(position);
+            }
+
+            // 保存窗口里的 BPM 是最终值，直接把工具栏输入框同步过去
+            TxtBpmEdit.Text = _doc.Bpm.ToString();
+            Roll.Refresh();
+            Lane.Refresh();
             UpdateStatus();
             _notify?.Invoke("已保存：" + Path.GetFileName(path));
             return true;
@@ -504,12 +554,46 @@ public partial class MidiEditorView : UserControl
                     NewDocument();
                     return true;
 
+                case Key.E:
+                    if (shift) return false;
+                    RequestExit();
+                    return true;
+
                 case Key.Z:
+                    if (Keyboard.FocusedElement is TextBoxBase) return false;
                     if (shift) Redo(); else Undo();
                     return true;
 
                 case Key.Y:
+                    if (Keyboard.FocusedElement is TextBoxBase) return false;
                     Redo();
+                    return true;
+
+                case Key.C:
+                    if (shift) return false;
+                    if (Keyboard.FocusedElement is TextBoxBase) return false;
+                    int copied = Roll.CopySelectedNotes();
+                    _notify?.Invoke(copied > 0
+                        ? $"已复制 {copied} 个音符"
+                        : "没有选中音符");
+                    return true;
+
+                case Key.X:
+                    if (shift) return false;
+                    if (Keyboard.FocusedElement is TextBoxBase) return false;
+                    int cut = Roll.CutSelectedNotes();
+                    _notify?.Invoke(cut > 0
+                        ? $"已剪切 {cut} 个音符"
+                        : "没有选中音符");
+                    return true;
+
+                case Key.V:
+                    if (shift) return false;
+                    if (Keyboard.FocusedElement is TextBoxBase) return false;
+                    int pasted = Roll.PasteNotes();
+                    _notify?.Invoke(pasted > 0
+                        ? $"已粘贴 {pasted} 个音符到播放头"
+                        : "剪贴板里没有音符");
                     return true;
 
                 default:
@@ -534,6 +618,19 @@ public partial class MidiEditorView : UserControl
         if (!ctrl && e.Key == Key.Tab)
         {
             if (!e.IsRepeat) SetLaneMode(!Lane.PedalMode);
+            return true;
+        }
+
+        // BPM 微调：即使焦点在 BPM 输入框里也生效
+        if (!ctrl && e.Key == Key.OemOpenBrackets)
+        {
+            if (!e.IsRepeat) NudgeBpm(-5);
+            return true;
+        }
+
+        if (!ctrl && e.Key == Key.OemCloseBrackets)
+        {
+            if (!e.IsRepeat) NudgeBpm(+5);
             return true;
         }
 
@@ -568,7 +665,8 @@ public partial class MidiEditorView : UserControl
 
             case Key.Delete:
             case Key.Back:
-                Roll.DeleteSelectedNotes();
+                int deleted = Roll.DeleteSelectedNotes();
+                if (deleted > 0) _notify?.Invoke($"已删除 {deleted} 个音符");
                 return true;
 
             default:
@@ -578,8 +676,63 @@ public partial class MidiEditorView : UserControl
 
     // ---------------- 状态 ----------------
 
+    private void UpdateSnapLabel()
+    {
+        LblSnap.Text = Roll.SnapEnabled ? $"吸附 {Roll.SnapLabel}" : "吸附 关闭";
+    }
+
+    private void NudgeBpm(int delta)
+    {
+        if (_doc == null) return;
+        TxtBpmEdit.Text = Math.Clamp(_doc.Bpm + delta, 20, 400).ToString();
+        ApplyBpmFromEditor();
+    }
+
+    private void ApplyBpmFromEditor(bool restartPlayback = true)
+    {
+        if (_doc == null) return;
+
+        if (!int.TryParse((TxtBpmEdit.Text ?? "").Trim(), out int bpm))
+        {
+            TxtBpmEdit.Text = _doc.Bpm.ToString();
+            return;
+        }
+
+        bpm = Math.Clamp(bpm, 20, 400);
+        if (bpm == _doc.Bpm)
+        {
+            TxtBpmEdit.Text = bpm.ToString();
+            return;
+        }
+
+        bool wasPlaying = _session?.IsPlaying == true;
+        long position = _session?.PositionTicks ?? 0;
+
+        _doc.Bpm = bpm;
+        _doc.MarkDirty();
+        TxtBpmEdit.Text = bpm.ToString();
+
+        if (wasPlaying && restartPlayback && _session != null)
+        {
+            _session.Stop();
+            if (_session.Play(_portProvider?.Invoke()))
+                _session.SeekTicks(position);
+            else
+                _notify?.Invoke("BPM 已修改，按空格重新播放");
+        }
+
+        Roll.Refresh();
+        Lane.Refresh();
+        UpdateStatus();
+        UpdatePlaybackUi();
+
+        if (restartPlayback) _notify?.Invoke($"BPM 已改为 {bpm}");
+    }
+
     private void UpdateStatus()
     {
+        UpdateSnapLabel();
+
         if (_doc == null)
         {
             LblTitle.Text = "未打开 MIDI";
@@ -587,8 +740,12 @@ public partial class MidiEditorView : UserControl
             LblSaveState.Text = "";
             LblSelection.Text = "";
             LblSourceInfo.Text = "";
+            TxtBpmEdit.Text = "";
             return;
         }
+
+        if (!TxtBpmEdit.IsKeyboardFocusWithin)
+            TxtBpmEdit.Text = _doc.Bpm.ToString();
 
         LblTitle.Text = _doc.SourcePath == null
             ? "新建 MIDI"

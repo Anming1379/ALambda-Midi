@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Threading;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Multimedia;
@@ -16,19 +17,29 @@ namespace MidiPlayer.Controls;
 public partial class PianoKeyboardWindow : Window
 {
     private const int MinOctave = 0;
-    private const int MaxOctave = 7;
+    private const int MaxOctave = 6;       // 3 个八度可见，最高到 B8，避免超出 MIDI 127
     private const int OctavesVisible = 3;
     private const int Velocity = 100;
+
+    private const int PressAnimMs = 90;
+    private const int ReleaseAnimMs = 160;
 
     private int _baseOctave = 4;
     private OutputDevice? _output;
 
     private readonly HashSet<Key> _pressedKeys = new();
     private readonly HashSet<int> _activeNotes = new();
-    private bool _shiftDown;
-    private bool _sustainOn;
+    private readonly Dictionary<int, long> _keyPressStarted = new();
+    private readonly Dictionary<int, long> _keyReleaseStarted = new();
 
-    private int? _mousePressedNote = null;
+    private bool _shiftDown;
+    private bool _spaceDown;
+    private bool _pedalLatched;
+    private bool _pedalSentOn;
+
+    private int? _mousePressedNote;
+    private int? _hoverNote;
+    private bool _mouseHeld;
 
     // 电脑键盘 → 相对 baseOctave 的半音偏移
     private static readonly Dictionary<Key, int> KeyMap = new()
@@ -43,25 +54,36 @@ public partial class PianoKeyboardWindow : Window
         // 高八度（Q 行）
         { Key.Q, 12 }, { Key.D2, 13 }, { Key.W, 14 }, { Key.D3, 15 }, { Key.E, 16 },
         { Key.R, 17 }, { Key.D5, 18 }, { Key.T, 19 }, { Key.D6, 20 }, { Key.Y, 21 },
-  { Key.D7, 22 }, { Key.U, 23 }, { Key.I, 24 }, { Key.D9, 25 }, { Key.O, 26 },
-{ Key.D0, 27 }, { Key.P, 28 },
-{ Key.OemOpenBrackets, 29 }, { Key.OemPlus, 30 }, { Key.OemCloseBrackets, 31 },
-{ Key.OemPipe, 33 }, { Key.OemBackslash, 33 },   // 美式键盘是 OemPipe，欧式额外键是 OemBackslash
-};
+        { Key.D7, 22 }, { Key.U, 23 }, { Key.I, 24 }, { Key.D9, 25 }, { Key.O, 26 },
+        { Key.D0, 27 }, { Key.P, 28 },
+        { Key.OemOpenBrackets, 29 }, { Key.OemPlus, 30 }, { Key.OemCloseBrackets, 31 },
+        { Key.OemPipe, 33 }, { Key.OemBackslash, 33 },
+    };
 
-    // 绘制相关
+    private static readonly SolidColorBrush PedalOnBrush = CreateFrozenBrush(0x60, 0xA5, 0xFA);
+    private static readonly SolidColorBrush PedalOffBrush = CreateFrozenBrush(0x71, 0x71, 0x7A);
+
+    private static SolidColorBrush CreateFrozenBrush(byte r, byte g, byte b)
+    {
+        var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+        brush.Freeze();
+        return brush;
+    }
+
+    // 绘制相关：保持原来的黑色系 + 蓝白琴键，不引入新的主题色
     private readonly SKPaint _whitePaint  = new() { Color = new SKColor(0xE4, 0xE4, 0xE7), IsAntialias = false };
     private readonly SKPaint _blackPaint  = new() { Color = new SKColor(0x18, 0x18, 0x1B), IsAntialias = false };
     private readonly SKPaint _activeWhite = new() { Color = new SKColor(0x3B, 0x82, 0xF6), IsAntialias = false };
     private readonly SKPaint _activeBlack = new() { Color = new SKColor(0x60, 0xA5, 0xFA), IsAntialias = false };
     private readonly SKPaint _borderPaint = new() { Color = new SKColor(0x27, 0x27, 0x2A), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
     private readonly SKPaint _labelPaint  = new() { Color = new SKColor(0x80, 0x80, 0x88), IsAntialias = true };
-    private readonly SKFont  _labelFont   = new(SKTypeface.Default, 11);
+    private readonly SKFont  _labelFont   = new(SKTypeface.Default, 10);
+    private readonly SKPaint _keyFillPaint = new() { IsAntialias = false };
+    private readonly SKPaint _keyBorderPaint = new() { Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = false };
+    private readonly SKPaint _highlightPaint = new() { IsAntialias = false };
+    private readonly SKPaint _pedalLinePaint = new() { IsAntialias = false };
 
-private readonly DispatcherTimer _redrawTimer = new()
-{
-    Interval = TimeSpan.FromMilliseconds(33)
-};
+    private bool PedalActive => _shiftDown || _spaceDown || _pedalLatched;
 
     public PianoKeyboardWindow(string portName)
     {
@@ -70,6 +92,7 @@ private readonly DispatcherTimer _redrawTimer = new()
         try
         {
             _output = OutputDevice.GetByName(portName);
+            SendCC(64, 0);   // 打开窗口时先把踏板复位，避免上一段 Sustain 残留
         }
         catch (Exception ex)
         {
@@ -86,46 +109,100 @@ private readonly DispatcherTimer _redrawTimer = new()
         BtnClose.Click   += (_, _) => Close();
         BtnOctDown.Click += (_, _) => ChangeOctave(-1);
         BtnOctUp.Click   += (_, _) => ChangeOctave(+1);
+        BtnPedal.Click   += (_, _) => TogglePedalLatch();
 
         PianoCanvas.PaintSurface += OnPaint;
         PianoCanvas.MouseDown += OnMouseDown;
         PianoCanvas.MouseMove += OnMouseMove;
         PianoCanvas.MouseUp   += OnMouseUp;
+        PianoCanvas.MouseLeave += OnMouseLeave;
+        PianoCanvas.MouseWheel += OnMouseWheel;
 
         PreviewKeyDown += OnKeyDown;
         PreviewKeyUp   += OnKeyUp;
 
-_redrawTimer.Tick += (_, _) => PianoCanvas.InvalidateVisual();
-_redrawTimer.Start();
-
-        UpdateRangeLabel();
+        Loaded += OnLoaded;
+        Deactivated += OnDeactivated;
 
         Closed += (_, _) =>
         {
-            _redrawTimer.Stop();
+            CompositionTarget.Rendering -= OnRendering;
+
+            _shiftDown = false;
+            _spaceDown = false;
+            _pedalLatched = false;
+            UpdatePedal(false);
             ReleaseAll();
+
             _output?.Dispose();
             _output = null;
         };
+
+        UpdateRangeLabel();
+        UpdatePedal(false);
     }
 
-    // ---------------- 键盘 ----------------
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        CompositionTarget.Rendering += OnRendering;
+
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = ease
+        });
+
+        _hoverNote = IsMouseOver ? HitTestNote(Mouse.GetPosition(PianoCanvas)) : null;
+        PianoCanvas.InvalidateVisual();
+    }
+
+    private void OnDeactivated(object? sender, EventArgs e)
+    {
+        // 焦点跑掉时把所有按住的键和踏板都放掉，避免留下长音
+        _shiftDown = false;
+        _spaceDown = false;
+        _pedalLatched = false;
+        UpdatePedal(false);
+        ReleaseAll();
+        _hoverNote = null;
+        PianoCanvas.InvalidateVisual();
+    }
+
+    // ---------------- 快捷键 ----------------
 
     private void OnKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.LeftShift || e.Key == Key.RightShift)
         {
-            _shiftDown = true;
-            if (!_sustainOn)
+            if (!_shiftDown)
             {
-                _sustainOn = true;
-                SendCC(64, 127);
+                _shiftDown = true;
+                UpdatePedal();
+            }
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Space)
+        {
+            if (!_spaceDown)
+            {
+                _spaceDown = true;
+                UpdatePedal();
             }
             e.Handled = true;
             return;
         }
 
         if (_shiftDown && (e.Key == Key.Left || e.Key == Key.Right))
+        {
+            ChangeOctave(e.Key == Key.Left ? -1 : +1);
+            e.Handled = true;
+            return;
+        }
+
+        bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+        if (ctrl && (e.Key == Key.Left || e.Key == Key.Right))
         {
             ChangeOctave(e.Key == Key.Left ? -1 : +1);
             e.Handled = true;
@@ -150,11 +227,21 @@ _redrawTimer.Start();
     {
         if (e.Key == Key.LeftShift || e.Key == Key.RightShift)
         {
-            _shiftDown = false;
-            if (_sustainOn)
+            if (_shiftDown)
             {
-                _sustainOn = false;
-                SendCC(64, 0);
+                _shiftDown = false;
+                UpdatePedal();
+            }
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Space)
+        {
+            if (_spaceDown)
+            {
+                _spaceDown = false;
+                UpdatePedal();
             }
             e.Handled = true;
             return;
@@ -166,11 +253,13 @@ _redrawTimer.Start();
         _pressedKeys.Remove(e.Key);
 
         int note = MidiNote(offset);
-        SendNoteOff(note);
 
-        // 鼠标仍按着这个音符时不要熄灭
+        // 鼠标仍按着这个音符时不要熄灭，也不要提前发 Note Off
         if (_mousePressedNote != note)
+        {
+            SendNoteOff(note);
             _activeNotes.Remove(note);
+        }
 
         e.Handled = true;
     }
@@ -185,15 +274,50 @@ _redrawTimer.Start();
         ReleaseAll();
         _baseOctave = next;
         UpdateRangeLabel();
+
+        _hoverNote = IsMouseOver ? HitTestNote(Mouse.GetPosition(PianoCanvas)) : null;
+        AnimateOctaveSlide(delta);
+        PianoCanvas.InvalidateVisual();
+    }
+
+    private void AnimateOctaveSlide(int delta)
+    {
+        if (PianoCanvas.RenderTransform is not TranslateTransform transform)
+        {
+            transform = new TranslateTransform();
+            PianoCanvas.RenderTransform = transform;
+        }
+
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        double offset = delta > 0 ? -20 : 20;
+
+        transform.BeginAnimation(TranslateTransform.XProperty,
+            new DoubleAnimation(offset, 0, TimeSpan.FromMilliseconds(170))
+            {
+                EasingFunction = ease
+            });
+
+        PianoCanvas.BeginAnimation(OpacityProperty,
+            new DoubleAnimation(0.55, 1, TimeSpan.FromMilliseconds(170))
+            {
+                EasingFunction = ease
+            });
     }
 
     private void ReleaseAll()
     {
         foreach (var note in _activeNotes.ToList())
             SendNoteOff(note);
+
         _activeNotes.Clear();
         _pressedKeys.Clear();
         _mousePressedNote = null;
+        _mouseHeld = false;
+
+        if (PianoCanvas.IsMouseCaptured)
+            PianoCanvas.ReleaseMouseCapture();
+
+        PianoCanvas.InvalidateVisual();
     }
 
     private void UpdateRangeLabel()
@@ -203,59 +327,165 @@ _redrawTimer.Start();
         LblRange.Text = $"C{low} - B{high}";
     }
 
+    // ---------------- 踏板 ----------------
+
+    private void TogglePedalLatch()
+    {
+        _pedalLatched = !_pedalLatched;
+        UpdatePedal();
+    }
+
+    private void UpdatePedal(bool animate = true)
+    {
+        bool on = PedalActive;
+
+        if (on != _pedalSentOn)
+        {
+            SendCC(64, on ? 127 : 0);
+            _pedalSentOn = on;
+        }
+
+        UpdatePedalUi(on, animate);
+        PianoCanvas.InvalidateVisual();
+    }
+
+    private void UpdatePedalUi(bool on, bool animate)
+    {
+        PedalDot.Fill = on ? PedalOnBrush : PedalOffBrush;
+        LblPedal.Foreground = on ? PedalOnBrush : PedalOffBrush;
+        LblPedal.Text = on ? "踏板 开" : "踏板 关";
+        BtnPedal.ToolTip = on
+            ? "踏板已踩下，点击松开；Shift / 空格按住也可以"
+            : "踏板已松开，点击踩下；Shift / 空格按住也可以";
+
+        if (!animate) return;
+
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var pulse = new DoubleAnimation(0.55, 1, TimeSpan.FromMilliseconds(160))
+        {
+            EasingFunction = ease
+        };
+
+        PedalDotScale.BeginAnimation(ScaleTransform.ScaleXProperty, pulse);
+        PedalDotScale.BeginAnimation(ScaleTransform.ScaleYProperty, pulse);
+    }
+
     // ---------------- 鼠标 ----------------
 
     private void OnMouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (e.ChangedButton != MouseButton.Left) return;
+
         Keyboard.Focus(this);
 
         var pos = e.GetPosition(PianoCanvas);
         int? note = HitTestNote(pos);
+        _hoverNote = note;
         if (!note.HasValue) return;
 
         SendNoteOn(note.Value, Velocity);
         _activeNotes.Add(note.Value);
         _mousePressedNote = note;
+        _mouseHeld = true;
         PianoCanvas.CaptureMouse();
         e.Handled = true;
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
-        if (!_mousePressedNote.HasValue) return;
-        if (e.LeftButton != MouseButtonState.Pressed) return;
-
         var pos = e.GetPosition(PianoCanvas);
-        int? note = HitTestNote(pos);
-        if (note == _mousePressedNote) return;
+        int? hit = HitTestNote(pos);
 
-        int old = _mousePressedNote.Value;
-        SendNoteOff(old);
-        _activeNotes.Remove(old);
+        if (e.LeftButton != MouseButtonState.Pressed)
+            _mouseHeld = false;
 
-        if (note.HasValue)
+        if (!_mouseHeld)
         {
-            SendNoteOn(note.Value, Velocity);
-            _activeNotes.Add(note.Value);
+            // 还没按住：只更新悬停
+            if (hit != _hoverNote)
+            {
+                _hoverNote = hit;
+                PianoCanvas.InvalidateVisual();
+            }
+            return;
         }
-        _mousePressedNote = note;
+
+        if (hit == _mousePressedNote)
+        {
+            if (hit != _hoverNote)
+            {
+                _hoverNote = hit;
+                PianoCanvas.InvalidateVisual();
+            }
+            return;
+        }
+
+        if (_mousePressedNote.HasValue)
+        {
+            int old = _mousePressedNote.Value;
+            bool keyboardHoldsOld = _pressedKeys.Any(k =>
+                KeyMap.TryGetValue(k, out int off) && MidiNote(off) == old);
+            if (!keyboardHoldsOld)
+            {
+                SendNoteOff(old);
+                _activeNotes.Remove(old);
+            }
+        }
+
+        if (hit.HasValue)
+        {
+            SendNoteOn(hit.Value, Velocity);
+            _activeNotes.Add(hit.Value);
+        }
+
+        _mousePressedNote = hit;
+        _hoverNote = hit;
+        PianoCanvas.InvalidateVisual();
     }
 
     private void OnMouseUp(object sender, MouseButtonEventArgs e)
     {
+        if (e.ChangedButton != MouseButton.Left) return;
+
+        _mouseHeld = false;
+
         if (_mousePressedNote.HasValue)
         {
             int note = _mousePressedNote.Value;
-            SendNoteOff(note);
 
-            // 键盘仍按着同一音符时不熄灭
+            // 键盘仍按着同一音符时不熄灭，也不要提前发 Note Off
             bool stillHeld = _pressedKeys.Any(k =>
                 KeyMap.TryGetValue(k, out int off) && MidiNote(off) == note);
-            if (!stillHeld) _activeNotes.Remove(note);
+            if (!stillHeld)
+            {
+                SendNoteOff(note);
+                _activeNotes.Remove(note);
+            }
 
             _mousePressedNote = null;
         }
-        PianoCanvas.ReleaseMouseCapture();
+
+        if (PianoCanvas.IsMouseCaptured)
+            PianoCanvas.ReleaseMouseCapture();
+
+        _hoverNote = HitTestNote(e.GetPosition(PianoCanvas));
+        PianoCanvas.InvalidateVisual();
+        e.Handled = true;
+    }
+
+    private void OnMouseLeave(object sender, MouseEventArgs e)
+    {
+        if (_mouseHeld) return;
+        if (_hoverNote == null) return;
+
+        _hoverNote = null;
+        PianoCanvas.InvalidateVisual();
+    }
+
+    private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (e.Delta == 0) return;
+        ChangeOctave(e.Delta > 0 ? +1 : -1);
         e.Handled = true;
     }
 
@@ -303,7 +533,13 @@ _redrawTimer.Start();
 
     private void SendNoteOn(int note, int velocity)
     {
-        if (_output == null || note < 0 || note > 127) return;
+        if (note < 0 || note > 127) return;
+
+        _keyReleaseStarted.Remove(note);
+        _keyPressStarted[note] = Environment.TickCount64;
+        PianoCanvas.InvalidateVisual();
+
+        if (_output == null) return;
         try
         {
             _output.SendEvent(new NoteOnEvent(
@@ -314,7 +550,13 @@ _redrawTimer.Start();
 
     private void SendNoteOff(int note)
     {
-        if (_output == null || note < 0 || note > 127) return;
+        if (note < 0 || note > 127) return;
+
+        _keyPressStarted.Remove(note);
+        _keyReleaseStarted[note] = Environment.TickCount64;
+        PianoCanvas.InvalidateVisual();
+
+        if (_output == null) return;
         try
         {
             _output.SendEvent(new NoteOffEvent(
@@ -334,6 +576,85 @@ _redrawTimer.Start();
         catch { }
     }
 
+    // ---------------- 动画帧 ----------------
+
+    private void OnRendering(object? sender, EventArgs e)
+    {
+        if (!IsVisible) return;
+        if (_keyPressStarted.Count == 0 && _keyReleaseStarted.Count == 0) return;
+
+        long now = Environment.TickCount64;
+        PianoCanvas.InvalidateVisual();
+        PruneKeyAnimations(now);
+    }
+
+    private void PruneKeyAnimations(long now)
+    {
+        if (_keyPressStarted.Count > 0)
+        {
+            var expired = _keyPressStarted
+                .Where(kv => now - kv.Value >= PressAnimMs)
+                .Select(kv => kv.Key)
+                .ToList();
+            foreach (int key in expired) _keyPressStarted.Remove(key);
+        }
+
+        if (_keyReleaseStarted.Count > 0)
+        {
+            var expired = _keyReleaseStarted
+                .Where(kv => now - kv.Value >= ReleaseAnimMs)
+                .Select(kv => kv.Key)
+                .ToList();
+            foreach (int key in expired) _keyReleaseStarted.Remove(key);
+        }
+    }
+
+    private float KeyPressAmount(int midi, long now)
+    {
+        if (_keyPressStarted.TryGetValue(midi, out long pressStart))
+        {
+            float t = (now - pressStart) / (float)PressAnimMs;
+            if (t >= 1f)
+            {
+                _keyPressStarted.Remove(midi);
+                return 1f;
+            }
+            return EaseOutCubic(Math.Clamp(t, 0f, 1f));
+        }
+
+        // 鼠标和键盘同时按着同一个音时，以“仍按住”为准
+        if (_activeNotes.Contains(midi)) return 1f;
+
+        if (_keyReleaseStarted.TryGetValue(midi, out long releaseStart))
+        {
+            float t = (now - releaseStart) / (float)ReleaseAnimMs;
+            if (t >= 1f)
+            {
+                _keyReleaseStarted.Remove(midi);
+                return 0f;
+            }
+            return 1f - EaseOutCubic(Math.Clamp(t, 0f, 1f));
+        }
+
+        return 0f;
+    }
+
+    private static float EaseOutCubic(float t)
+    {
+        float inv = 1f - t;
+        return 1f - inv * inv * inv;
+    }
+
+    private static SKColor Lerp(SKColor from, SKColor to, float t)
+    {
+        t = Math.Clamp(t, 0f, 1f);
+        return new SKColor(
+            (byte)(from.Red   + (to.Red   - from.Red)   * t),
+            (byte)(from.Green + (to.Green - from.Green) * t),
+            (byte)(from.Blue  + (to.Blue  - from.Blue)  * t),
+            (byte)(from.Alpha + (to.Alpha - from.Alpha) * t));
+    }
+
     // ---------------- 绘制 ----------------
 
     private void OnPaint(object? sender, SKPaintSurfaceEventArgs e)
@@ -344,6 +665,8 @@ _redrawTimer.Start();
         canvas.Clear(new SKColor(0x18, 0x18, 0x1B));
         if (w <= 0 || h <= 0) return;
 
+        long now = Environment.TickCount64;
+
         int whiteCount = 7 * OctavesVisible;
         float whiteW = (float)w / whiteCount;
         float whiteH = h;
@@ -352,6 +675,7 @@ _redrawTimer.Start();
 
         int baseMidi = (_baseOctave + 1) * 12;
         int[] whiteSemitones = { 0, 2, 4, 5, 7, 9, 11 };
+        string[] whiteNames = { "C", "D", "E", "F", "G", "A", "B" };
 
         // 白键
         for (int i = 0; i < whiteCount; i++)
@@ -361,19 +685,39 @@ _redrawTimer.Start();
             int midi = baseMidi + octave * 12 + whiteSemitones[idx];
             float x = i * whiteW;
 
-            var paint = _activeNotes.Contains(midi) ? _activeWhite : _whitePaint;
-            canvas.DrawRect(x, 0, whiteW, whiteH, paint);
-            canvas.DrawRect(x + 0.5f, 0.5f, whiteW - 1, whiteH - 1, _borderPaint);
+            float press = KeyPressAmount(midi, now);
+            float shift = press * 2f;
+            float drawH = Math.Max(1f, whiteH - shift);
 
-            // 只在 C 键上标音名
-            if (whiteSemitones[idx] == 0)
+            _keyFillPaint.Color = Lerp(_whitePaint.Color, _activeWhite.Color, press * 0.92f);
+            canvas.DrawRect(x, shift, whiteW, drawH, _keyFillPaint);
+            canvas.DrawRect(x + 0.5f, shift + 0.5f, whiteW - 1f, drawH - 1f, _borderPaint);
+
+            if (_hoverNote == midi && press < 0.04f)
             {
-                int octaveNum = midi / 12 - 1;
-                string label = $"C{octaveNum}";
-                float labelY = whiteH - 8;
-                canvas.DrawText(label, x + whiteW / 2, labelY,
-                                SKTextAlign.Center, _labelFont, _labelPaint);
+                _keyFillPaint.Color = new SKColor(0x3B, 0x82, 0xF6, 0x18);
+                canvas.DrawRect(x + 1, shift + 1, whiteW - 2, drawH - 2, _keyFillPaint);
+
+                _keyBorderPaint.Color = new SKColor(0x60, 0xA5, 0xFA, 0x9A);
+                canvas.DrawRect(x + 0.5f, shift + 0.5f, whiteW - 1f, drawH - 1f, _keyBorderPaint);
             }
+
+            if (press > 0.02f)
+            {
+                _keyBorderPaint.Color = new SKColor(0x60, 0xA5, 0xFA, (byte)(180 * press));
+                canvas.DrawRect(x + 0.5f, shift + 0.5f, whiteW - 1f, drawH - 1f, _keyBorderPaint);
+
+                _highlightPaint.Color = new SKColor(0xFF, 0xFF, 0xFF, (byte)(80 * press));
+                canvas.DrawRect(x, shift, whiteW, 2, _highlightPaint);
+            }
+
+            // 所有白键都标音名；按下的键文字变亮
+            _labelPaint.Color = press > 0.05f
+                ? new SKColor(0xFA, 0xFA, 0xFA)
+                : new SKColor(0x80, 0x80, 0x88);
+            string label = $"{whiteNames[idx]}{midi / 12 - 1}";
+            canvas.DrawText(label, x + whiteW / 2, whiteH - 8,
+                            SKTextAlign.Center, _labelFont, _labelPaint);
         }
 
         // 黑键
@@ -389,9 +733,38 @@ _redrawTimer.Start();
                 float cx = absWhite * whiteW;
                 float x = cx - blackW / 2;
 
-                var paint = _activeNotes.Contains(midi) ? _activeBlack : _blackPaint;
-                canvas.DrawRect(x, 0, blackW, blackH, paint);
+                float press = KeyPressAmount(midi, now);
+                float shift = press * 2f;
+                float drawH = Math.Max(1f, blackH - shift);
+
+                _keyFillPaint.Color = Lerp(_blackPaint.Color, _activeBlack.Color, press * 0.95f);
+                canvas.DrawRect(x, shift, blackW, drawH, _keyFillPaint);
+
+                if (_hoverNote == midi && press < 0.04f)
+                {
+                    _keyFillPaint.Color = new SKColor(0x60, 0xA5, 0xFA, 0x20);
+                    canvas.DrawRect(x + 1, shift + 1, blackW - 2, drawH - 2, _keyFillPaint);
+
+                    _keyBorderPaint.Color = new SKColor(0x60, 0xA5, 0xFA, 0x9A);
+                    canvas.DrawRect(x + 0.5f, shift + 0.5f, blackW - 1f, drawH - 1f, _keyBorderPaint);
+                }
+
+                if (press > 0.02f)
+                {
+                    _keyBorderPaint.Color = new SKColor(0x60, 0xA5, 0xFA, (byte)(190 * press));
+                    canvas.DrawRect(x + 0.5f, shift + 0.5f, blackW - 1f, drawH - 1f, _keyBorderPaint);
+
+                    _highlightPaint.Color = new SKColor(0xFF, 0xFF, 0xFF, (byte)(70 * press));
+                    canvas.DrawRect(x, shift, blackW, 2, _highlightPaint);
+                }
             }
+        }
+
+        // 踏板踩下时，键盘顶部亮一条细线，配合底部状态文字
+        if (PedalActive)
+        {
+            _pedalLinePaint.Color = new SKColor(0x60, 0xA5, 0xFA, 0xE6);
+            canvas.DrawRect(0, 0, w, 2, _pedalLinePaint);
         }
     }
 }

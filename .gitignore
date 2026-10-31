@@ -407,3 +407,7 @@ config.json
 # 测试用 MIDI（有版权，不提交）
 Assets/Midi/*.mid
 Assets/Midi/*.midi
+
+# Release build output
+# 打包产物（安装包 / 便携版 / 发布目录）
+dist/

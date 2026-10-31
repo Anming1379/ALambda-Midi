@@ -2,10 +2,10 @@
 
 你是否也受够了那些 800 年前的 midi 播放器老旧的界面, 又丑又复杂的 UI ? 你是否也经常苦恼为何 midi 播放器不能使用你更优秀的软音源如 Keyscape, Pianoteq ? 你是否还在找能够同时拥有 播放 midi, 发送 midi, 电脑键盘转 midi 信号, midi可视化的软件? 今天这个软件就是为解决这个问题而诞生的!
 
-**ALambda Midi v2.0**, 一个 MIDI 播放器 + 实时可视化工具，支持发送 MIDI 信号到外部音源（如 Pianoteq、DAW、Microsoft GS Wavetable Synth）
+**ALambda Midi v2.2**, 一个 MIDI 播放器 + 实时可视化工具，支持发送 MIDI 信号到外部音源（如 Pianoteq、DAW、Microsoft GS Wavetable Synth）
 
 <p align="center">
-  <img src="Assets/ALambda Midi.png" width="128" alt="ALambda Midi 图标">
+  <img src="Assets/icon2.png" width="128" alt="ALambda Midi 图标">
 </p>
 
 ---
@@ -38,7 +38,7 @@
 
 ### 钢琴键盘
 
-电脑键盘映射成 MIDI 键盘，支持鼠标点击、滑奏、Shift 踏板、八度切换。
+电脑键盘映射成 MIDI 键盘。支持鼠标点击、滑奏、Shift / 空格踏板、踏板锁定、八度切换，以及琴键悬停和按下 / 松开动画。
 
 <p align="center">
   <img src="Assets/github/演示4.png" width="800" alt="钢琴键盘">
@@ -83,10 +83,14 @@
 - 电脑键盘映射（FL Studio 风格）
 - 低八度：`Z S X D C V G B H N J M , L . ; /`
 - 高八度：`Q 2 W 3 E R 5 T 6 Y 7 U I 9 O 0 P [ = ] \`
-- 鼠标点击、按住拖动滑奏
-- Shift 踏板
-- Shift + ←/→ 切换八度（范围 C0 ~ B7）
-- 白键上标注 C 音名
+- 鼠标点击、按住拖动滑奏；悬停琴键会高亮
+- 琴键有 90ms 按下、160ms 松开的颜色 / 下沉动画，键盘和鼠标都会触发
+- `Shift` 或 `空格` 按住踏板；底部「踏板 关/开」按钮可以点击锁定，并实时显示踏板状态
+- 踏板踩下时键盘顶部会亮一条细线，和底部状态文字同步
+- `Ctrl + ←/→` 或鼠标滚轮切换八度；`Shift + ←/→` 保留旧习惯
+- 八度切换有 170ms 滑入动画；白键全部标注音名
+- 窗口失去焦点或关闭时自动松开所有音，并发送 CC64=0，避免残留踏板
+- 范围 C0 ~ B8（3 个八度可见，最高不会超过 MIDI 127）
 
 ### 颜色自定义
 
@@ -107,9 +111,14 @@
 - 整页切换到编辑器界面，不是弹出新窗口
 - 钢琴窗 / 鼓编辑器一键切换
 - 左键放置 / 拖动音符，拖动音符右边缘拉长或缩短，右键删除（右键滑动可连续删除）
+- 新建音符会淡入并轻微放大，删除音符会留下 180ms 的缩小淡出残影
+- 多选后拖动任意一个选中音符的右边缘，可以一起改变所有选中音符的时值
+- 框选后按 `Ctrl+C` / `Ctrl+X` 复制 / 剪切，`Ctrl+V` 粘贴到播放头；`Delete` / `Backspace` 删除
+- 剪贴板按「拍」保存，跨 PPQ / 跨文档粘贴也能保持正确时值；粘贴会保留相对时间、音高和力度
 - Shift + 拖动框选（在已有选中上叠加，不会清空之前的选中）
 - 新音符自动沿用「最近碰过的音符」的长度和力度
-- 点击顶部小节标尺移动播放头；播放时播放头走到画面中间后自动跟随滚动
+- 点击顶部小节标尺移动播放头；播放时播放头走到画面中间后平滑自动跟随滚动
+- 编辑器打开时会暂停主界面的可视化重绘，避免两套画布同时渲染
 - 播放中 / 试听时，左侧琴键会亮起；纵向放大后，音符内部会显示一条力度条
 - 钢琴窗下方的「力度 / 踏板」编辑区：
   - 力度页拖动竖条修改力度，`Shift` 多选可一起修改
@@ -117,8 +126,12 @@
   - 按 `Tab` 在力度 / 踏板之间切换
   - 拖动编辑区上方的分隔条，或双击标题栏，可以上下收起 / 展开
 - 网格自适应：滚轮上下滚动，`Shift + 滚轮` 左右滚动，`Ctrl + 滚轮` 横向缩放，`Alt + 滚轮` 纵向缩放
-- 磁铁吸附、调式辅助（8 种调式）、撤销 / 重做
+- 自适应网格吸附：缩放时自动在 `1/1` ~ `1/32` 之间切换，状态栏会显示当前吸附精度
+- 工具栏 BPM 输入框可直接改 BPM（回车应用，`[` / `]` 每次 ±5）；播放中修改会从当前位置重新开始播放
+- 调式辅助（8 种调式）、撤销 / 重做
 - `Ctrl + S` 快速保存：第一次打开保存窗口，之后直接覆盖上次的文件；工具栏保存按钮始终打开保存窗口
+- 保存窗口会完整换行显示保存路径，不会再被截断
+- 保存窗口和工具栏的输入框文字垂直居中、完整显示，不会被上下裁掉
 - 默认保存在 `音乐\ALambda Midi`，并记住每个源 MIDI 的保存位置
 - 退出编辑器或关闭程序时会询问是否保存
 
@@ -142,9 +155,12 @@
 | `Ctrl` + `N` | 新建空 MIDI（打开编辑器） |
 | `Ctrl` + `P` | 钢琴键盘 |
 | `Ctrl` + `,` | 打开设置 |
+| `Ctrl` + `D` | 停止并复位 |
 | `[` / `]` | BPM -5 / +5 |
 
 > v2.0 起取消了「单按 Ctrl / Shift」这类一碰就触发的键位，全部改为明确的组合键，并屏蔽了长按连发，避免误触。
+
+**钢琴键盘窗口**：`Shift` / `空格` 按住踏板，点击底部踏板按钮可锁定；`Ctrl + ←/→` 或鼠标滚轮切换八度。
 
 ### 编辑器快捷键
 
@@ -154,17 +170,38 @@
 | `Esc` | 返回可视化界面（会询问保存） |
 | `Ctrl` + `S` | 快速保存（首次打开保存窗口） |
 | `Ctrl` + `N` | 新建空 MIDI |
+| `Ctrl` + `C` / `Ctrl` + `X` | 复制 / 剪切选中音符 |
+| `Ctrl` + `V` | 粘贴到播放头 |
 | `Ctrl` + `Z` / `Ctrl` + `Y` | 撤销 / 重做 |
+| `Ctrl` + `E` | 返回主界面 |
 | `↑` / `↓` | 选中音符移调 ±1 |
 | `Shift` + `↑` / `↓` | 移调一个八度 |
 | `←` / `→` | 按小节移动播放头 |
 | `Home` | 回到开头 |
 | `Delete` / `Backspace` | 删除选中音符 |
+| `[` / `]` | BPM -5 / +5 |
 | `Tab` | 切换力度 / 踏板编辑页 |
 
 ---
 
-## v2.0 更新
+## v2.2 更新
+
+- **音符剪贴板**：框选后支持 `Ctrl+C` 复制、`Ctrl+X` 剪切、`Ctrl+V` 粘贴到播放头；`Delete` / `Backspace` 删除，操作都会显示 Toast
+- **跨 PPQ 剪贴板**：剪贴板按「拍」保存，跨文档 / 不同 PPQ 粘贴也能保持正确时值；保留音高、力度和相对时间
+- **钢琴键盘优化**：保持原黑色系，新增琴键悬停高亮、90ms 按下 / 160ms 松开动画、八度切换滑入、窗口淡入
+- **踏板状态**：`Shift` / `空格` 按住踏板，底部「踏板 关/开」可点击锁定并实时显示；踏板踩下时键盘顶部亮蓝线，失焦 / 关闭自动发送 CC64=0
+- **操作手感**：支持 `Ctrl+←/→` 或鼠标滚轮切换八度；白键全部标注音名；范围修正为 C0 ~ B8，空闲时停止重绘
+
+### v2.1
+
+
+- **新图标**：更换为新的 ALambda Midi 图标（多尺寸 ICO，窗口 / 任务栏 / 安装包统一）
+- **编辑器动画**：新建音符淡入放大，删除音符留下 180ms 的缩小淡出残影
+- **输入框修复**：修复自定义 TextBox 模板重复应用 Padding 导致 BPM / 保存窗口文字被裁切
+- **资源修复**：窗口图标和图标字体改用程序集限定 pack URI，避免从非标准入口启动时报 XAML 资源错误
+- **打包**：新增 Inno Setup 安装版（自动检测并安装 .NET 10 桌面运行时）和自包含便携版
+
+### v2.0
 
 - **滚动条**：全局换成极简自动隐藏样式，只在鼠标进入滚动区域时淡入，拖动时变紫
 - **快捷键**：取消单按 Ctrl / Shift 的敏感键位，改为组合键并屏蔽长按连发
@@ -182,22 +219,22 @@
 
 ### 方式一：安装版（推荐）
 
-1. 从 Releases 下载 [`ALambdaMidi_Setup_v2.0.exe`](https://github.com/Anming1379/ALambda-Midi/releases/download/v2.0/ALambdaMidi_Setup_v2.0.exe)
+1. 从 Releases 下载 [`ALambdaMidi_Setup_v2.2.exe`](https://github.com/Anming1379/ALambda-Midi/releases/download/v2.2/ALambdaMidi_Setup_v2.2.exe)
 2. 双击运行，按提示完成安装
-3. 安装程序会自动检测 .NET 10 桌面运行时，未安装则引导下载
+3. 安装包不自带 .NET；安装时会自动检测 .NET 10 桌面运行时，未安装则调用内置脚本下载安装
 
-### 方式二：便携版
+### 方式二：便携版（自包含）
 
-1. 从 Releases 下载 [`ALambdaMidi_Portable_v2.0.exe`](https://github.com/Anming1379/ALambda-Midi/releases/download/v2.0/ALambdaMidi_Portable_v2.0.exe)
-2. 双击运行，无需安装
-3. 需要系统已安装 .NET 10 桌面运行时
+1. 从 Releases 下载 [`ALambdaMidi-Portable-v2.2-win-x64.zip`](https://github.com/Anming1379/ALambda-Midi/releases/download/v2.2/ALambdaMidi-Portable-v2.2-win-x64.zip)
+2. 解压到任意文件夹，双击 `ALambdaMidi.exe` 运行，无需安装
+3. 已自带 .NET 10 运行时，不需要系统额外安装
 
 ---
 
 ## 系统要求
 
 - Windows 10 1809 或更高版本（推荐 Windows 11）
-- .NET 10 桌面运行时（[下载](https://dotnet.microsoft.com/download/dotnet/10.0/runtime)）
+- 安装版 / framework-dependent 构建需要 .NET 10 桌面运行时（[下载](https://dotnet.microsoft.com/download/dotnet/10.0/runtime)）；便携版已自带
 - 外部 MIDI 音源（如 Pianoteq、DAW、或系统自带的 Microsoft GS Wavetable Synth）
 
 ---
@@ -269,9 +306,51 @@ Windows 11 内置了新一代的 MIDI 服务，它使用 **“环回端点对”
 
 ---
 
+## 构建与打包
+
+### 1. 还原依赖（使用国内镜像）
+
+```bash
+dotnet restore MidiPlayer.csproj -r win-x64 --source https://nuget.azure.cn/v3/index.json
+```
+
+### 2. framework-dependent 发布（给 Inno Setup 使用）
+
+```bash
+dotnet publish MidiPlayer.csproj -c Release -r win-x64 --self-contained false \
+  -p:DebugType=None -p:DebugSymbols=false --no-restore \
+  -o dist/publish-framework
+```
+
+### 3. 自包含便携版发布
+
+```bash
+dotnet publish MidiPlayer.csproj -c Release -r win-x64 --self-contained true \
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+  -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false \
+  --no-restore -o dist/portable/ALambdaMidi-Portable-v2.2-win-x64
+```
+
+打包为 zip：
+
+```powershell
+Compress-Archive -Path dist/portable/ALambdaMidi-Portable-v2.2-win-x64/* `
+  -DestinationPath dist/ALambdaMidi-Portable-v2.2-win-x64.zip -Force
+```
+
+### 4. 编译 Inno Setup 安装包
+
+```powershell
+& 'D:\Program Files (x86)\Inno Setup 6\ISCC.exe' installer.iss
+```
+
+安装包会输出到 `dist/ALambdaMidi_Setup_v2.2.exe`。安装脚本会使用 `dist/publish-framework` 里的文件，并在缺少 .NET 10 桌面运行时时调用 `Assets/install-dotnet` 里的脚本自动安装。
+
+---
+
 ## 关于
 
-- **版本**：v2.0
+- **版本**：v2.2
 - **作者**：Anming_cat
 - **主页**：https://anmingcat.pages.dev/
 - **仓库**：https://github.com/Anming1379/ALambda-Midi
@@ -284,7 +363,8 @@ Windows 11 内置了新一代的 MIDI 服务，它使用 **“环回端点对”
 
 - 不支持内嵌音源，需要外部 MIDI 设备或软件监听
 - 部分全新的 Windows 11 系统可能没有 Microsoft GS Wavetable Synth，需自行安装音源
-- 单文件发布（`--self-contained false`）需要用户预先安装 .NET 10 桌面运行时
+- 安装版不自带 .NET，需要 .NET 10 桌面运行时；便携版已自包含，不需要额外安装
+- 自包含便携版体积较大（包含 .NET 运行时）
 
 ---
 

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="保存 MIDI"
-        Width="540" Height="452"
+        Width="560" Height="480"
         WindowStyle="None"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
@@ -51,7 +51,9 @@
             </Border>
 
             <!-- 表单 -->
-            <StackPanel Grid.Row="1" Margin="24,18,24,12">
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24,18,24,12">
 
                 <TextBlock Text="MIDI 名称"
                            Foreground="{StaticResource TextSecondaryBrush}"
@@ -80,7 +82,7 @@
                 <TextBlock x:Name="LblPath"
                            Foreground="{StaticResource TextDimBrush}"
                            FontFamily="{StaticResource UiFont}" FontSize="10"
-                           TextTrimming="CharacterEllipsis"
+                           TextWrapping="Wrap"
                            Margin="0,0,0,16"/>
 
                 <Grid Margin="0,0,0,4">
@@ -96,7 +98,8 @@
                                    FontFamily="{StaticResource UiFont}" FontSize="11"
                                    Margin="0,0,0,6"/>
                         <TextBox x:Name="TxtBpm" Style="{StaticResource FlatTextBox}"
-                                 Height="32"/>
+                                 Height="32" MaxLength="3"
+                                 ToolTip="BPM（20 - 400）"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1">
@@ -116,6 +119,7 @@
                            FontFamily="{StaticResource UiFont}" FontSize="11"
                            Margin="0,18,0,0"/>
             </StackPanel>
+            </ScrollViewer>
 
             <!-- 底部按钮 -->
             <StackPanel Grid.Row="2" Orientation="Horizontal"

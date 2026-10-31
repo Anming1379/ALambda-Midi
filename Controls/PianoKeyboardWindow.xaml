@@ -4,12 +4,15 @@
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="钢琴键盘"
-        Width="900" Height="260"
-        MinWidth="500" MinHeight="200"
+        Width="900" Height="280"
+        MinWidth="520" MinHeight="240"
         WindowStyle="None"
         ResizeMode="CanResize"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource BgBrush}">
+        Background="{StaticResource BgBrush}"
+        Opacity="0"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
 
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0"
@@ -39,22 +42,24 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button x:Name="BtnOctDown" Content="&#xe5cb;"
                                 Style="{StaticResource IconButton}" Width="32" Height="32"
-                                ToolTip="八度 -1"/>
+                                ToolTip="八度 -1（Ctrl + ← / 滚轮向下）"/>
                         <Button x:Name="BtnOctUp" Content="&#xe5cc;"
                                 Style="{StaticResource IconButton}" Width="32" Height="32"
-                                ToolTip="八度 +1"/>
+                                ToolTip="八度 +1（Ctrl + → / 滚轮向上）"/>
                         <Button x:Name="BtnClose" Content="✕"
                                 Foreground="{StaticResource TextSecondaryBrush}"
                                 Background="Transparent" BorderThickness="0"
                                 FontSize="12" Width="32" Height="32"
-                                Cursor="Hand"/>
+                                Cursor="Hand" ToolTip="关闭"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- 钢琴画布 -->
-            <skia:SKElement x:Name="PianoCanvas" Grid.Row="1"
-                            IgnorePixelScaling="True"/>
+            <!-- 钢琴画布。PianoHost 负责裁切，切换八度时画布可以左右滑入 -->
+            <Grid x:Name="PianoHost" Grid.Row="1" ClipToBounds="True">
+                <skia:SKElement x:Name="PianoCanvas"
+                                IgnorePixelScaling="True"/>
+            </Grid>
 
             <!-- 状态栏 -->
             <Border Grid.Row="2"
@@ -62,14 +67,48 @@
                     BorderBrush="{StaticResource BorderLineBrush}"
                     BorderThickness="0,1,0,0">
                 <Grid Margin="12,0">
-                    <TextBlock x:Name="LblRange" Text="C4 - B7"
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               FontFamily="{StaticResource UiFont}" FontSize="12"
-                               VerticalAlignment="Center"/>
-                    <TextBlock Text="Shift 踏板 · Shift + ←/→ 移八度 · 鼠标可点"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <TextBlock x:Name="LblRange" Text="C4 - B6"
+                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                   FontFamily="{StaticResource UiFont}" FontSize="12"
+                                   VerticalAlignment="Center"/>
+                        <Border Width="1" Height="12" Margin="10,0"
+                                Background="{StaticResource BorderLineBrush}"/>
+                        <Button x:Name="BtnPedal"
+                                Style="{StaticResource TextButton}"
+                                Height="22" Padding="8,0" BorderThickness="1"
+                                Focusable="False"
+                                ToolTip="点击锁定 / 松开踏板；Shift 或 空格按住也可以">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse x:Name="PedalDot" Width="7" Height="7"
+                                         Fill="{StaticResource TextDimBrush}"
+                                         VerticalAlignment="Center" Margin="0,0,6,0">
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform x:Name="PedalDotScale"
+                                                        CenterX="3.5" CenterY="3.5"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                                <TextBlock x:Name="LblPedal" Text="踏板 关"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontFamily="{StaticResource UiFont}" FontSize="11"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1"
+                               Text="Shift / 空格 踏板 · Ctrl+←/→ 或滚轮 移八度 · 鼠标可点"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                FontFamily="{StaticResource UiFont}" FontSize="11"
-                               HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                               HorizontalAlignment="Right" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="14,0,0,0"/>
                 </Grid>
             </Border>
         </Grid>
