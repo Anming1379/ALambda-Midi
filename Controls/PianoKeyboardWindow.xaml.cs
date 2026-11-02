@@ -60,7 +60,7 @@ public partial class PianoKeyboardWindow : Window
         { Key.OemPipe, 33 }, { Key.OemBackslash, 33 },
     };
 
-    private static readonly SolidColorBrush PedalOnBrush = CreateFrozenBrush(0x60, 0xA5, 0xFA);
+    private static readonly SolidColorBrush PedalOnBrush = CreateFrozenBrush(0xA7, 0x8B, 0xFA);
     private static readonly SolidColorBrush PedalOffBrush = CreateFrozenBrush(0x71, 0x71, 0x7A);
 
     private static SolidColorBrush CreateFrozenBrush(byte r, byte g, byte b)
@@ -70,11 +70,11 @@ public partial class PianoKeyboardWindow : Window
         return brush;
     }
 
-    // 绘制相关：保持原来的黑色系 + 蓝白琴键，不引入新的主题色
+    // 绘制相关：白色 / 黑色键底色不变，激活高亮使用主题紫
     private readonly SKPaint _whitePaint  = new() { Color = new SKColor(0xE4, 0xE4, 0xE7), IsAntialias = false };
     private readonly SKPaint _blackPaint  = new() { Color = new SKColor(0x18, 0x18, 0x1B), IsAntialias = false };
-    private readonly SKPaint _activeWhite = new() { Color = new SKColor(0x3B, 0x82, 0xF6), IsAntialias = false };
-    private readonly SKPaint _activeBlack = new() { Color = new SKColor(0x60, 0xA5, 0xFA), IsAntialias = false };
+    private readonly SKPaint _activeWhite = new() { Color = new SKColor(0x8B, 0x5C, 0xF6), IsAntialias = false };
+    private readonly SKPaint _activeBlack = new() { Color = new SKColor(0xA7, 0x8B, 0xFA), IsAntialias = false };
     private readonly SKPaint _borderPaint = new() { Color = new SKColor(0x27, 0x27, 0x2A), Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
     private readonly SKPaint _labelPaint  = new() { Color = new SKColor(0x80, 0x80, 0x88), IsAntialias = true };
     private readonly SKFont  _labelFont   = new(SKTypeface.Default, 10);
@@ -695,16 +695,16 @@ public partial class PianoKeyboardWindow : Window
 
             if (_hoverNote == midi && press < 0.04f)
             {
-                _keyFillPaint.Color = new SKColor(0x3B, 0x82, 0xF6, 0x18);
+                _keyFillPaint.Color = new SKColor(0x8B, 0x5C, 0xF6, 0x18);
                 canvas.DrawRect(x + 1, shift + 1, whiteW - 2, drawH - 2, _keyFillPaint);
 
-                _keyBorderPaint.Color = new SKColor(0x60, 0xA5, 0xFA, 0x9A);
+                _keyBorderPaint.Color = new SKColor(0xA7, 0x8B, 0xFA, 0x9A);
                 canvas.DrawRect(x + 0.5f, shift + 0.5f, whiteW - 1f, drawH - 1f, _keyBorderPaint);
             }
 
             if (press > 0.02f)
             {
-                _keyBorderPaint.Color = new SKColor(0x60, 0xA5, 0xFA, (byte)(180 * press));
+                _keyBorderPaint.Color = new SKColor(0xA7, 0x8B, 0xFA, (byte)(180 * press));
                 canvas.DrawRect(x + 0.5f, shift + 0.5f, whiteW - 1f, drawH - 1f, _keyBorderPaint);
 
                 _highlightPaint.Color = new SKColor(0xFF, 0xFF, 0xFF, (byte)(80 * press));
@@ -742,16 +742,16 @@ public partial class PianoKeyboardWindow : Window
 
                 if (_hoverNote == midi && press < 0.04f)
                 {
-                    _keyFillPaint.Color = new SKColor(0x60, 0xA5, 0xFA, 0x20);
+                    _keyFillPaint.Color = new SKColor(0x8B, 0x5C, 0xF6, 0x20);
                     canvas.DrawRect(x + 1, shift + 1, blackW - 2, drawH - 2, _keyFillPaint);
 
-                    _keyBorderPaint.Color = new SKColor(0x60, 0xA5, 0xFA, 0x9A);
+                    _keyBorderPaint.Color = new SKColor(0xA7, 0x8B, 0xFA, 0x9A);
                     canvas.DrawRect(x + 0.5f, shift + 0.5f, blackW - 1f, drawH - 1f, _keyBorderPaint);
                 }
 
                 if (press > 0.02f)
                 {
-                    _keyBorderPaint.Color = new SKColor(0x60, 0xA5, 0xFA, (byte)(190 * press));
+                    _keyBorderPaint.Color = new SKColor(0xA7, 0x8B, 0xFA, (byte)(190 * press));
                     canvas.DrawRect(x + 0.5f, shift + 0.5f, blackW - 1f, drawH - 1f, _keyBorderPaint);
 
                     _highlightPaint.Color = new SKColor(0xFF, 0xFF, 0xFF, (byte)(70 * press));
@@ -763,7 +763,7 @@ public partial class PianoKeyboardWindow : Window
         // 踏板踩下时，键盘顶部亮一条细线，配合底部状态文字
         if (PedalActive)
         {
-            _pedalLinePaint.Color = new SKColor(0x60, 0xA5, 0xFA, 0xE6);
+            _pedalLinePaint.Color = new SKColor(0xA7, 0x8B, 0xFA, 0xE6);
             canvas.DrawRect(0, 0, w, 2, _pedalLinePaint);
         }
     }
