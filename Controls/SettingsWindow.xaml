@@ -279,7 +279,8 @@
                                     • 框选后 Ctrl+C / Ctrl+X 复制 / 剪切，Ctrl+V 粘贴到播放头；Delete / Backspace 删除<LineBreak/>
                                     • Ctrl+Z / Ctrl+Y 撤销 / 重做；Ctrl+S 快速保存<LineBreak/>
                                     • 工具栏保存按钮始终打开保存窗口，可改名称 / 目录 / BPM / 拍号；路径会完整换行显示<LineBreak/>
-                                    • 保存成功后主界面会自动切换到刚保存的文件，BPM 与磁盘一致；源文件不会被覆盖，除非把保存路径选成源文件
+                                    • 打开已有 MIDI 时保存窗口默认指回源文件，确认覆盖后源文件 BPM 会更新；新建 MIDI 才默认保存到音乐/ALambda Midi<LineBreak/>
+                                    • 保存成功后主界面会载入实际保存的文件，BPM 与磁盘一致
                                 </TextBlock>
 
                                 <TextBlock Text="编辑器快捷键" FontSize="14" FontWeight="SemiBold"
@@ -316,8 +317,8 @@
                                 <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="22"
                                            Foreground="#C8C8CC"
                                            FontFamily="{StaticResource UiFont}" Margin="0,0,0,22">
-                                    • 安装版：ALambdaMidi_Setup_v2.3.exe，不自带 .NET；安装时会自动检测并安装 .NET 10 桌面运行时<LineBreak/>
-                                    • 便携版：ALambdaMidi-Portable-v2.3-win-x64.zip，自包含运行时，解压后直接运行 ALambdaMidi.exe<LineBreak/>
+                                    • 安装版：ALambdaMidi_Setup_v2.4.exe，不自带 .NET；安装时会自动检测并安装 .NET 10 桌面运行时<LineBreak/>
+                                    • 便携版：ALambdaMidi-Portable-v2.4-win-x64.zip，自包含运行时，解压后直接运行 ALambdaMidi.exe<LineBreak/>
                                     • 两个版本都把设置保存在 %AppData%\ALambda Midi\config.json，升级或移动程序不会丢失
                                 </TextBlock>
 
@@ -346,7 +347,7 @@
                                        Foreground="#E4E4E7"
                                        FontFamily="{StaticResource UiFont}"
                                        FontSize="26" FontWeight="SemiBold"/>
-                            <TextBlock x:Name="LblVersion" Text="v2.3"
+                            <TextBlock x:Name="LblVersion" Text="v2.4"
                                        Foreground="#A1A1AA"
                                        FontFamily="{StaticResource UiFont}"
                                        FontSize="12" Margin="0,6,0,0"/>

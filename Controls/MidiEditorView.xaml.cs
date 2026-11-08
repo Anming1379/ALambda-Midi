@@ -220,16 +220,43 @@ public partial class MidiEditorView : UserControl
         _doc.SaveName = _doc.Title;
         _doc.SaveFolder = AppConfig.DefaultEditorFolder;
 
+        // 打开已有 MIDI 时，默认保存回源文件本身（保存窗口会要求确认覆盖）。
+        // 这样用户改完 BPM 点保存，再次打开的就是改过的文件；另存为只需在窗口里改目录。
+        string? fullSourcePath = null;
+        if (filePath != null)
+        {
+            try { fullSourcePath = Path.GetFullPath(filePath); }
+            catch { fullSourcePath = filePath; }
+
+            _doc.SaveName = Path.GetFileNameWithoutExtension(fullSourcePath);
+            _doc.SaveFolder = Path.GetDirectoryName(fullSourcePath) ?? AppConfig.DefaultEditorFolder;
+        }
+
         if (_config != null && _sourceKey.Length > 0 &&
             _config.EditorSaves.TryGetValue(_sourceKey, out var info))
         {
-            _doc.SavePath = info.Path;
-            if (!string.IsNullOrWhiteSpace(info.MidiName)) _doc.SaveName = info.MidiName;
-            if (!string.IsNullOrWhiteSpace(info.Folder))   _doc.SaveFolder = info.Folder;
+            // 只有历史保存路径确实就是当前文件时，才恢复快捷保存路径。
+            // 旧记录如果指向另一个副本（例如 音乐/ALambda Midi/xxx.mid），
+            // 不能把它当成源文件的默认保存位置，否则用户会以为改了源文件、其实只改了副本。
+            bool samePath = false;
+            if (!string.IsNullOrWhiteSpace(info.Path) && fullSourcePath != null)
+            {
+                try
+                {
+                    samePath = string.Equals(Path.GetFullPath(info.Path), fullSourcePath,
+                                             StringComparison.OrdinalIgnoreCase);
+                }
+                catch { samePath = false; }
+            }
 
-            // 重要：BPM / 拍号必须以磁盘上的 MIDI 文件为准。
-            // 之前从 EditorSaves 恢复会让「源文件仍是 120、编辑器却显示上次改过的 180」，
-            // 保存后的文件与界面不一致。这里只恢复保存路径信息，不再覆盖 tempo。
+            if (samePath)
+            {
+                _doc.SavePath = info.Path;
+                if (!string.IsNullOrWhiteSpace(info.MidiName)) _doc.SaveName = info.MidiName;
+                if (!string.IsNullOrWhiteSpace(info.Folder))   _doc.SaveFolder = info.Folder;
+            }
+
+            // BPM / 拍号始终以磁盘文件为准，不能从 EditorSaves 恢复。
         }
 
         _session = new MidiEditorSession(_doc);

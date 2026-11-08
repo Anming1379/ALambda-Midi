@@ -2,7 +2,7 @@
 ; .NET 10 桌面运行时不会打包进安装目录，安装阶段由内置脚本检测并自动安装。
 
 #define MyAppName "ALambda Midi"
-#define MyAppVersion "2.3"
+#define MyAppVersion "2.4"
 #define MyAppPublisher "Anming_cat"
 #define MyAppURL "https://anmingcat.pages.dev/"
 #define MyAppExeName "ALambdaMidi.exe"
@@ -24,7 +24,7 @@ OutputDir=dist
 OutputBaseFilename=ALambdaMidi_Setup_v{#MyAppVersion}
 SetupIconFile=Assets\icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
-VersionInfoVersion=2.3.0.0
+VersionInfoVersion=2.4.0.0
 MinVersion=10.0.17763
 Compression=lzma2/max
 SolidCompression=yes
