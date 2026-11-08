@@ -2,7 +2,7 @@
 
 你是否也受够了那些 800 年前的 midi 播放器老旧的界面, 又丑又复杂的 UI ? 你是否也经常苦恼为何 midi 播放器不能使用你更优秀的软音源如 Keyscape, Pianoteq ? 你是否还在找能够同时拥有 播放 midi, 发送 midi, 电脑键盘转 midi 信号, midi可视化的软件? 今天这个软件就是为解决这个问题而诞生的!
 
-**ALambda Midi v2.2**, 一个 MIDI 播放器 + 实时可视化工具，支持发送 MIDI 信号到外部音源（如 Pianoteq、DAW、Microsoft GS Wavetable Synth）
+**ALambda Midi v2.3**, 一个 MIDI 播放器 + 实时可视化工具，支持发送 MIDI 信号到外部音源（如 Pianoteq、DAW、Microsoft GS Wavetable Synth）
 
 <p align="center">
   <img src="Assets/icon2.png" width="128" alt="ALambda Midi 图标">
@@ -129,6 +129,8 @@
 - 网格自适应：滚轮上下滚动，`Shift + 滚轮` 左右滚动，`Ctrl + 滚轮` 横向缩放，`Alt + 滚轮` 纵向缩放
 - 自适应网格吸附：缩放时自动在 `1/1` ~ `1/32` 之间切换，状态栏会显示当前吸附精度
 - 工具栏 BPM 输入框可直接改 BPM（回车应用，`[` / `]` 每次 ±5）；播放中修改会从当前位置重新开始播放
+- 保存成功后主界面会自动切换到刚保存的文件；BPM / 拍号与磁盘内容一致
+- 如果希望覆盖源文件，在保存窗口里把路径选成源文件即可（会确认覆盖）；默认仍保存到音乐\ALambda Midi
 - 调式辅助（8 种调式）、撤销 / 重做
 - `Ctrl + S` 快速保存：第一次打开保存窗口，之后直接覆盖上次的文件；工具栏保存按钮始终打开保存窗口
 - 保存窗口会完整换行显示保存路径，不会再被截断
@@ -185,7 +187,14 @@
 
 ---
 
-## v2.2 更新
+## v2.3 更新
+
+- **保存一致性修复**：修改 BPM / 拍号后保存，tempo 会正确写入 MIDI 文件；保存成功后主界面会自动载入刚保存的文件
+- **不再被旧记忆覆盖**：重新打开源 MIDI 时，BPM / 拍号以磁盘文件为准，不会出现「文件还是 120、编辑器却显示上次的 180」
+- **保存路径可见**：保存 Toast 会显示完整路径；`Ctrl+S` 仍然覆盖上次保存的文件
+- **保存记忆**：源路径和实际保存路径都会记录；保存后继续编辑时快捷保存依然顺手
+
+### v2.2 更新
 
 - **音符剪贴板**：框选后支持 `Ctrl+C` 复制、`Ctrl+X` 剪切、`Ctrl+V` 粘贴到播放头；`Delete` / `Backspace` 删除，操作都会显示 Toast
 - **跨 PPQ 剪贴板**：剪贴板按「拍」保存，跨文档 / 不同 PPQ 粘贴也能保持正确时值；保留音高、力度和相对时间
@@ -221,13 +230,13 @@
 
 ### 方式一：安装版（推荐）
 
-1. 从 Releases 下载 [`ALambdaMidi_Setup_v2.2.exe`](https://github.com/Anming1379/ALambda-Midi/releases/download/v2.2/ALambdaMidi_Setup_v2.2.exe)
+1. 从 Releases 下载 [`ALambdaMidi_Setup_v2.3.exe`](https://github.com/Anming1379/ALambda-Midi/releases/download/v2.3/ALambdaMidi_Setup_v2.3.exe)
 2. 双击运行，按提示完成安装
 3. 安装包不自带 .NET；安装时会自动检测 .NET 10 桌面运行时，未安装则调用内置脚本下载安装
 
 ### 方式二：便携版（自包含）
 
-1. 从 Releases 下载 [`ALambdaMidi-Portable-v2.2-win-x64.zip`](https://github.com/Anming1379/ALambda-Midi/releases/download/v2.2/ALambdaMidi-Portable-v2.2-win-x64.zip)
+1. 从 Releases 下载 [`ALambdaMidi-Portable-v2.3-win-x64.zip`](https://github.com/Anming1379/ALambda-Midi/releases/download/v2.3/ALambdaMidi-Portable-v2.3-win-x64.zip)
 2. 解压到任意文件夹，双击 `ALambdaMidi.exe` 运行，无需安装
 3. 已自带 .NET 10 运行时，不需要系统额外安装
 
@@ -330,14 +339,14 @@ dotnet publish MidiPlayer.csproj -c Release -r win-x64 --self-contained false \
 dotnet publish MidiPlayer.csproj -c Release -r win-x64 --self-contained true \
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
   -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false \
-  --no-restore -o dist/portable/ALambdaMidi-Portable-v2.2-win-x64
+  --no-restore -o dist/portable/ALambdaMidi-Portable-v2.3-win-x64
 ```
 
 打包为 zip：
 
 ```powershell
-Compress-Archive -Path dist/portable/ALambdaMidi-Portable-v2.2-win-x64/* `
-  -DestinationPath dist/ALambdaMidi-Portable-v2.2-win-x64.zip -Force
+Compress-Archive -Path dist/portable/ALambdaMidi-Portable-v2.3-win-x64/* `
+  -DestinationPath dist/ALambdaMidi-Portable-v2.3-win-x64.zip -Force
 ```
 
 ### 4. 编译 Inno Setup 安装包
@@ -346,13 +355,13 @@ Compress-Archive -Path dist/portable/ALambdaMidi-Portable-v2.2-win-x64/* `
 & 'D:\Program Files (x86)\Inno Setup 6\ISCC.exe' installer.iss
 ```
 
-安装包会输出到 `dist/ALambdaMidi_Setup_v2.2.exe`。安装脚本会使用 `dist/publish-framework` 里的文件，并在缺少 .NET 10 桌面运行时时调用 `Assets/install-dotnet` 里的脚本自动安装。
+安装包会输出到 `dist/ALambdaMidi_Setup_v2.3.exe`。安装脚本会使用 `dist/publish-framework` 里的文件，并在缺少 .NET 10 桌面运行时时调用 `Assets/install-dotnet` 里的脚本自动安装。
 
 ---
 
 ## 关于
 
-- **版本**：v2.2
+- **版本**：v2.3
 - **作者**：Anming_cat
 - **主页**：https://anmingcat.pages.dev/
 - **仓库**：https://github.com/Anming1379/ALambda-Midi

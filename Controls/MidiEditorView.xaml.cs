@@ -35,6 +35,9 @@ public partial class MidiEditorView : UserControl
     /// <summary>编辑器收起到后台时触发，主窗口用来恢复可视化区域的渲染。</summary>
     public event Action? Deactivated;
 
+    /// <summary>保存成功后触发，参数是实际写入的 MIDI 路径。主窗口用它同步当前文件。</summary>
+    public event Action<string>? Saved;
+
     public MidiEditorView()
     {
         InitializeComponent();
@@ -224,10 +227,9 @@ public partial class MidiEditorView : UserControl
             if (!string.IsNullOrWhiteSpace(info.MidiName)) _doc.SaveName = info.MidiName;
             if (!string.IsNullOrWhiteSpace(info.Folder))   _doc.SaveFolder = info.Folder;
 
-            // 记住上次保存时用的 BPM / 拍号，重新打开源 MIDI 时恢复
-            _doc.Bpm         = Math.Clamp(info.Bpm, 20, 400);
-            _doc.Numerator   = Math.Clamp(info.Numerator, 1, 32);
-            _doc.Denominator = Math.Clamp(info.Denominator, 1, 32);
+            // 重要：BPM / 拍号必须以磁盘上的 MIDI 文件为准。
+            // 之前从 EditorSaves 恢复会让「源文件仍是 120、编辑器却显示上次改过的 180」，
+            // 保存后的文件与界面不一致。这里只恢复保存路径信息，不再覆盖 tempo。
         }
 
         _session = new MidiEditorSession(_doc);
@@ -501,7 +503,11 @@ public partial class MidiEditorView : UserControl
             Roll.Refresh();
             Lane.Refresh();
             UpdateStatus();
-            _notify?.Invoke("已保存：" + Path.GetFileName(path));
+
+            // 让主窗口切换到刚保存的文件：这样返回主界面时 BPM / 文件标签
+            // 与磁盘内容一致，不会再出现「文件 120、编辑器 180」的错位。
+            Saved?.Invoke(path);
+            _notify?.Invoke("已保存到：" + path);
             return true;
         }
         catch (Exception ex)
@@ -515,9 +521,9 @@ public partial class MidiEditorView : UserControl
 
     private void RememberSave()
     {
-        if (_config == null || _doc?.SavePath == null || _sourceKey.Length == 0) return;
+        if (_config == null || _doc?.SavePath == null) return;
 
-        _config.EditorSaves[_sourceKey] = new EditorSaveInfo
+        var info = new EditorSaveInfo
         {
             MidiName = _doc.SaveName,
             Folder = _doc.SaveFolder,
@@ -526,6 +532,20 @@ public partial class MidiEditorView : UserControl
             Numerator = _doc.Numerator,
             Denominator = _doc.Denominator
         };
+
+        // 源路径和实际保存路径都记一份：
+        // 保存后主界面会切到保存结果，下次从主界面打开时 Ctrl+S 仍能直接保存。
+        if (_sourceKey.Length > 0)
+            _config.EditorSaves[_sourceKey] = info;
+
+        try
+        {
+            var saveKey = Path.GetFullPath(_doc.SavePath).ToLowerInvariant();
+            if (saveKey != _sourceKey)
+                _config.EditorSaves[saveKey] = info;
+        }
+        catch { }
+
         _config.Save();
     }
 

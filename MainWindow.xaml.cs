@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -95,6 +95,7 @@ public partial class MainWindow : Window
             MainContent.Visibility = Visibility.Visible;
             MainStatus.Visibility = Visibility.Visible;
         };
+        EditorView.Saved += OnEditorSaved;
         BtnSettings.Click += (_, _) => OpenSettings();
 
         BtnBpmDown.Click   += (_, _) => ChangeBpm(-5);
@@ -566,7 +567,7 @@ public partial class MainWindow : Window
 
     // ---------------- 加载 ----------------
 
-    private void TryLoadFile(string path, bool autoPlay)
+    private void TryLoadFile(string path, bool autoPlay, bool showToast = true)
     {
         try
         {
@@ -591,7 +592,8 @@ public partial class MainWindow : Window
             string folderInfo = _playlist.Count > 1
                 ? $" · 文件夹内 {_playlist.Count} 首"
                 : "";
-            ShowToast($"已载入 {_player.CurrentFileName}{folderInfo}");
+            if (showToast)
+                ShowToast($"已载入 {_player.CurrentFileName}{folderInfo}");
 
             if (autoPlay) StartPlayback(silent: true);
         }
@@ -914,6 +916,15 @@ public partial class MainWindow : Window
 
         var win = new PianoKeyboardWindow(portName) { Owner = this };
         win.Show();
+    }
+
+    private void OnEditorSaved(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return;
+
+        // 保存成功后同步主界面的当前文件，避免界面上继续显示源文件的旧 BPM。
+        // 这里不弹「已载入」Toast，保留编辑器自己的「已保存到」提示。
+        TryLoadFile(path, autoPlay: false, showToast: false);
     }
 
     private void OpenEditor()
